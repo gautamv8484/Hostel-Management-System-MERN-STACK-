@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # Getting Started with Create React App
 
 This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
@@ -68,3 +69,31 @@ This section has moved here: [https://facebook.github.io/create-react-app/docs/d
 ### `npm run build` fails to minify
 
 This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+=======
+# Hostel Management System (MERN Stack)
+
+A full-stack web application for managing hostel bookings with admin approval and real-time availability.
+
+## 🚀 Features
+- User registration & login
+- Online hostel booking
+- Admin dashboard for approval
+- Real-time availability tracking
+
+## 🛠 Tech Stack
+- MongoDB
+- Express.js
+- React.js
+- Node.js
+
+## 📂 Project Structure
+client/ (React)
+server/ (Node + Express)
+
+## 📸 Screenshots
+(Add images here)
+
+## 🚀 Future Features
+- Payment integration
+- Notifications
+>>>>>>> 2572b0e9ea337c09d8f60d68d93114e53b0c5c66
