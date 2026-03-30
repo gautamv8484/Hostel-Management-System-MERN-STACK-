@@ -25,7 +25,7 @@ exports.getRooms = async (req, res) => {
     res.json({
       success: true,
       count: rooms.length,
-      rooms
+      rooms:rooms
     });
   } catch (error) {
     res.status(500).json({
