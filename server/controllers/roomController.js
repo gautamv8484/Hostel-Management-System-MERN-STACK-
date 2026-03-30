@@ -1,7 +1,5 @@
 const Room = require('../models/Room');
 
-// @desc    Get all rooms
-// @route   GET /api/rooms
 exports.getRooms = async (req, res) => {
   try {
     const { sharingType, roomType, available } = req.query;
@@ -17,8 +15,9 @@ exports.getRooms = async (req, res) => {
     }
 
     let rooms = await Room.find(query).sort('roomNumber');
+    
+    rooms = rooms.map(room => room.toObject());
 
-    // Filter by availability if requested
     if (available === 'true') {
       rooms = rooms.filter(room => room.availableBeds > 0);
     }
@@ -36,8 +35,6 @@ exports.getRooms = async (req, res) => {
   }
 };
 
-// @desc    Get single room
-// @route   GET /api/rooms/:id
 exports.getRoom = async (req, res) => {
   try {
     const room = await Room.findById(req.params.id)
@@ -52,7 +49,7 @@ exports.getRoom = async (req, res) => {
 
     res.json({
       success: true,
-      room
+      room: room.toObject()
     });
   } catch (error) {
     res.status(500).json({
@@ -62,29 +59,29 @@ exports.getRoom = async (req, res) => {
   }
 };
 
-// @desc    Create room (Admin)
-// @route   POST /api/rooms
 exports.createRoom = async (req, res) => {
   try {
-    const { roomNumber, floor, sharingType, roomType, pricePerBed, amenities, description, images } = req.body;
+    const { roomNumber, floor, sharingType, roomType, pricePerBed, amenities, description, images, name } = req.body;
 
-    // Create beds array based on sharing type
     const beds = [];
     for (let i = 1; i <= sharingType; i++) {
       beds.push({
         bedNumber: i,
         isOccupied: false,
+        isAvailable: true,
         occupant: null
       });
     }
 
     const room = await Room.create({
+      name: name || `Room ${roomNumber}`,
       roomNumber,
       floor,
       sharingType,
       roomType,
       beds,
       pricePerBed,
+      pricePerMonth: pricePerBed,
       amenities: amenities || [
         '24/7 WiFi',
         'Attached Bathroom',
@@ -96,12 +93,12 @@ exports.createRoom = async (req, res) => {
         'Laundry'
       ],
       description,
-      images
+      images: images || []
     });
 
     res.status(201).json({
       success: true,
-      room
+      room: room.toObject()
     });
   } catch (error) {
     res.status(500).json({
@@ -111,8 +108,6 @@ exports.createRoom = async (req, res) => {
   }
 };
 
-// @desc    Update room (Admin)
-// @route   PUT /api/rooms/:id
 exports.updateRoom = async (req, res) => {
   try {
     const room = await Room.findByIdAndUpdate(
@@ -130,7 +125,7 @@ exports.updateRoom = async (req, res) => {
 
     res.json({
       success: true,
-      room
+      room: room.toObject()
     });
   } catch (error) {
     res.status(500).json({
@@ -140,8 +135,6 @@ exports.updateRoom = async (req, res) => {
   }
 };
 
-// @desc    Delete room (Admin)
-// @route   DELETE /api/rooms/:id
 exports.deleteRoom = async (req, res) => {
   try {
     const room = await Room.findById(req.params.id);
@@ -153,7 +146,6 @@ exports.deleteRoom = async (req, res) => {
       });
     }
 
-    // Check if any bed is occupied
     const hasOccupants = room.beds.some(bed => bed.isOccupied);
     if (hasOccupants) {
       return res.status(400).json({
@@ -176,8 +168,6 @@ exports.deleteRoom = async (req, res) => {
   }
 };
 
-// @desc    Get room statistics (Admin)
-// @route   GET /api/rooms/stats
 exports.getRoomStats = async (req, res) => {
   try {
     const rooms = await Room.find({ isActive: true });

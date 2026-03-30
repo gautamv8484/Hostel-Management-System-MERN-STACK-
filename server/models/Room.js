@@ -56,7 +56,7 @@ const roomSchema = new mongoose.Schema({
   },
   beds: {
     type: [bedSchema],
-    default: []  // Add default empty array
+    default: []
   },
   pricePerBed: {
     type: Number,
@@ -84,9 +84,11 @@ const roomSchema = new mongoose.Schema({
     type: Date,
     default: Date.now
   }
+}, {
+  toJSON: { virtuals: true },
+  toObject: { virtuals: true }
 });
 
-// Virtual for available beds count - WITH SAFETY CHECK
 roomSchema.virtual('availableBeds').get(function() {
   if (!this.beds || !Array.isArray(this.beds)) {
     return 0;
@@ -94,16 +96,11 @@ roomSchema.virtual('availableBeds').get(function() {
   return this.beds.filter(bed => !bed.isOccupied && bed.isAvailable !== false).length;
 });
 
-// Virtual for total beds - WITH SAFETY CHECK
 roomSchema.virtual('totalBeds').get(function() {
   if (!this.beds || !Array.isArray(this.beds)) {
     return 0;
   }
   return this.beds.length;
 });
-
-// Ensure virtuals are included in JSON
-roomSchema.set('toJSON', { virtuals: true });
-roomSchema.set('toObject', { virtuals: true });
 
 module.exports = mongoose.model('Room', roomSchema);
