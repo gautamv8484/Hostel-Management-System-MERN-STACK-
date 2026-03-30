@@ -35,7 +35,7 @@ const Navbar = () => {
       <div className="navbar-container">
         <Link to="/" className="navbar-logo" onClick={closeMobileMenu}>
           <FiHome />
-          <span>StayEase</span>
+          <span>RUDRAKSHA</span>
         </Link>
 
         <div className={`navbar-links ${mobileMenuOpen ? 'active' : ''}`}>

@@ -1,4 +1,4 @@
-<<<<<<< HEAD
+<!-- <<<<<<< HEAD
 # Getting Started with Create React App
 
 This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
@@ -96,4 +96,4 @@ server/ (Node + Express)
 ## 🚀 Future Features
 - Payment integration
 - Notifications
->>>>>>> 2572b0e9ea337c09d8f60d68d93114e53b0c5c66
+>>>>>>> 2572b0e9ea337c09d8f60d68d93114e53b0c5c66 -->

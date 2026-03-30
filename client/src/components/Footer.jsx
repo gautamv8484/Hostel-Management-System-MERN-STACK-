@@ -60,14 +60,14 @@ const Footer = () => {
               </li>
               <li>
                 <FiMail style={{ marginRight: '0.5rem' }} />
-                info@stayease.com
+                info@rudraksha.com
               </li>
             </ul>
           </div>
         </div>
 
         <div className="footer-bottom">
-          <p>&copy; 2024 StayEase Hostel. All rights reserved.</p>
+          <p>&copy; 2024 RUDRAKSHA Hostel. All rights reserved.</p>
         </div>
       </div>
     </footer>

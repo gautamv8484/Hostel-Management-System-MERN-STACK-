@@ -5,9 +5,10 @@ import api from '../services/api';
 import { FiFilter, FiRefreshCw } from 'react-icons/fi';
 
 const Rooms = () => {
-  const [searchParams, setSearchParams] = useSearchParams();
+  const [searchParams] = useSearchParams();
   const [rooms, setRooms] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [filters, setFilters] = useState({
     sharingType: searchParams.get('sharing') || '',
     roomType: '',
@@ -20,6 +21,8 @@ const Rooms = () => {
 
   const fetchRooms = async () => {
     setLoading(true);
+    setError(null);
+    
     try {
       const params = new URLSearchParams();
       if (filters.sharingType) params.append('sharingType', filters.sharingType);
@@ -27,9 +30,21 @@ const Rooms = () => {
       if (filters.available) params.append('available', filters.available);
 
       const response = await api.get(`/rooms?${params.toString()}`);
-      setRooms(response.data.rooms);
-    } catch (error) {
-      console.error('Error fetching rooms:', error);
+      
+      let roomsData = [];
+      
+      if (response.data.success && response.data.rooms) {
+        roomsData = response.data.rooms;
+      } else if (response.data.rooms) {
+        roomsData = response.data.rooms;
+      } else if (Array.isArray(response.data)) {
+        roomsData = response.data;
+      }
+      
+      setRooms(roomsData);
+    } catch (err) {
+      setError('Failed to load rooms');
+      setRooms([]);
     } finally {
       setLoading(false);
     }
@@ -48,14 +63,13 @@ const Rooms = () => {
   };
 
   return (
-    <div className="rooms-page" style={{ padding: '2rem 0' }}>
+    <div className="rooms-page" style={{ padding: '2rem 0', minHeight: '80vh' }}>
       <div className="section-container">
         <div className="section-header">
           <h2>Our Rooms</h2>
           <p>Find your perfect accommodation from our wide range of options</p>
         </div>
 
-        {/* Filters */}
         <div className="filters-section">
           <div className="filters-grid">
             <div className="filter-group">
@@ -101,14 +115,21 @@ const Rooms = () => {
           </div>
         </div>
 
-        {/* Results */}
         {loading ? (
           <div className="loading-container">
             <div className="loading-spinner"></div>
+            <p>Loading rooms...</p>
+          </div>
+        ) : error ? (
+          <div className="empty-state">
+            <h3>{error}</h3>
+            <button className="btn btn-primary mt-2" onClick={fetchRooms}>
+              <FiRefreshCw /> Try Again
+            </button>
           </div>
         ) : rooms.length === 0 ? (
           <div className="empty-state">
-            <FiFilter style={{ fontSize: '4rem', color: 'var(--gray-300)' }} />
+            <FiFilter style={{ fontSize: '4rem', color: '#cbd5e1' }} />
             <h3>No rooms found</h3>
             <p>Try adjusting your filters to find available rooms</p>
             <button className="btn btn-primary mt-2" onClick={resetFilters}>

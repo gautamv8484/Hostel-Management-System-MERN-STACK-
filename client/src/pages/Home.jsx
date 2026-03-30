@@ -132,7 +132,7 @@ const Home = () => {
 
       {/* CTA Section */}
       <section style={{ 
-        background: 'linear-gradient(135deg, var(--primary-color), var(--primary-dark))',
+        backgroundColor:'#217394',
         padding: '5rem 0',
         color: 'white',
         textAlign: 'center'
