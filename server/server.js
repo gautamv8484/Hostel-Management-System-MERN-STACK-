@@ -19,6 +19,7 @@ app.use(express.urlencoded({ extended: true }));
 const allowedOrigins = [
   'http://localhost:3000',
   'http://127.0.0.1:3000',
+  'https://your-app.vercel.app',
   process.env.FRONTEND_URL, // Will be set in production
 ];
 
@@ -146,15 +147,7 @@ app.use((err, req, res, next) => {
   });
 });
 
-const PORT = process.env.PORT || 5000;
 
-const server = app.listen(PORT, () => {
-  console.log('=================================');
-  console.log(`🚀 Server running on port ${PORT}`);
-  console.log(`📍 Environment: ${process.env.NODE_ENV || 'development'}`);
-  console.log(`🗄️  Database: ${process.env.MONGO_URI ? 'Connected' : 'Not Connected'}`);
-  console.log('=================================');
-});
 
 // Handle unhandled promise rejections
 process.on('unhandledRejection', (err) => {
