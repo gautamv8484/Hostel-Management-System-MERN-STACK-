@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-// ✅ For now, we'll update this after backend is deployed
+
 const API_URL = process.env.REACT_APP_API_URL || 'https://rudraksha-hostel-backend.onrender.com/api';
 
 const api = axios.create({
