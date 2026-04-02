@@ -9,7 +9,6 @@ import {
   FiCheckCircle,
   FiXCircle,
   FiClock,
-  FiAlertCircle,
   FiRefreshCw,
   FiEdit,
   FiTrash2,
@@ -17,8 +16,12 @@ import {
   FiEye,
   FiToggleLeft,
   FiToggleRight,
-  FiX
+  FiX,
+  FiZap,
+  FiActivity,
+  FiLayers
 } from 'react-icons/fi';
+import { IoBedOutline } from 'react-icons/io5';
 import { format } from 'date-fns';
 import api from '../services/api';
 import toast from 'react-hot-toast';
@@ -73,19 +76,15 @@ const AdminPanel = () => {
     try {
       setLoading(true);
       
-      // Fetch stats
       const statsResponse = await api.get('/admin/stats');
       setStats(statsResponse.data);
 
-      // Fetch recent bookings
       const bookingsResponse = await api.get('/admin/bookings/recent');
       setRecentBookings(bookingsResponse.data.bookings || []);
 
-      // Fetch recent users
       const usersResponse = await api.get('/admin/users/recent');
       setRecentUsers(usersResponse.data.users || []);
 
-      // Fetch all rooms
       const roomsResponse = await api.get('/admin/rooms');
       setAllRooms(roomsResponse.data.rooms || []);
 
@@ -97,9 +96,7 @@ const AdminPanel = () => {
     }
   };
 
-  // ============ ROOM HANDLERS ============
-
-  // Open Add Room Modal
+  // Room Handlers
   const handleAddRoom = () => {
     setEditingRoom(null);
     setRoomForm({
@@ -116,7 +113,6 @@ const AdminPanel = () => {
     setShowRoomModal(true);
   };
 
-  // Open Edit Room Modal
   const handleEditRoom = (room) => {
     setEditingRoom(room);
     setRoomForm({
@@ -133,13 +129,11 @@ const AdminPanel = () => {
     setShowRoomModal(true);
   };
 
-  // View Room Details
   const handleViewRoom = (room) => {
     setViewingRoom(room);
     setShowViewModal(true);
   };
 
-  // Submit Room Form (Create/Update)
   const handleRoomSubmit = async (e) => {
     e.preventDefault();
     setFormLoading(true);
@@ -169,18 +163,14 @@ const AdminPanel = () => {
       setShowRoomModal(false);
       fetchAdminData();
     } catch (error) {
-      console.error('Room submit error:', error);
       toast.error(error.response?.data?.message || 'Failed to save room');
     } finally {
       setFormLoading(false);
     }
   };
 
-  // Delete Room
   const handleDeleteRoom = async (roomId) => {
-    if (!window.confirm('Are you sure you want to delete this room? This action cannot be undone.')) {
-      return;
-    }
+    if (!window.confirm('Are you sure you want to delete this room?')) return;
 
     try {
       await api.delete(`/admin/rooms/${roomId}`);
@@ -191,7 +181,6 @@ const AdminPanel = () => {
     }
   };
 
-  // Toggle Room Status
   const handleToggleRoomStatus = async (roomId) => {
     try {
       await api.put(`/admin/rooms/${roomId}/toggle`);
@@ -201,8 +190,6 @@ const AdminPanel = () => {
       toast.error('Failed to update room status');
     }
   };
-
-  // ============ BOOKING HANDLERS ============
 
   const handleUpdateBookingStatus = async (bookingId, status) => {
     try {
@@ -214,12 +201,8 @@ const AdminPanel = () => {
     }
   };
 
-  // ============ USER HANDLERS ============
-
   const handleDeleteUser = async (userId) => {
-    if (!window.confirm('Are you sure you want to delete this user?')) {
-      return;
-    }
+    if (!window.confirm('Are you sure you want to delete this user?')) return;
 
     try {
       await api.delete(`/admin/users/${userId}`);
@@ -230,11 +213,10 @@ const AdminPanel = () => {
     }
   };
 
-  // ============ HELPER COMPONENTS ============
-
+  // Stat Card Component
   const StatCard = ({ icon: Icon, title, value, color, subValue }) => (
-    <div className="stat-card">
-      <div className="stat-icon" style={{ background: `${color}20`, color }}>
+    <div className="admin-stat-card">
+      <div className={`stat-icon ${color}`}>
         <Icon size={24} />
       </div>
       <div className="stat-details">
@@ -242,6 +224,7 @@ const AdminPanel = () => {
         <p>{title}</p>
         {subValue && <span className="stat-sub">{subValue}</span>}
       </div>
+      <div className="stat-glow"></div>
     </div>
   );
 
@@ -253,18 +236,17 @@ const AdminPanel = () => {
       'checked-in': { color: 'info', icon: FiCheckCircle },
       'checked-out': { color: 'secondary', icon: FiCheckCircle }
     };
-    const { color, icon: Icon } = config[status] || config.pending;
+    const { color, icon: StatusIcon } = config[status] || config.pending;
     return (
-      <span className={`badge badge-${color}`}>
-        <Icon size={12} /> {status}
+      <span className={`status-badge badge-${color}`}>
+        <StatusIcon size={12} /> {status}
       </span>
     );
   };
 
-  // Loading State
   if (loading) {
     return (
-      <div className="loading-container">
+      <div className="admin-loading">
         <div className="loading-spinner"></div>
         <p>Loading admin panel...</p>
       </div>
@@ -273,449 +255,420 @@ const AdminPanel = () => {
 
   return (
     <div className="admin-panel">
-      <div className="admin-container">
-        
-        {/* Header */}
-        <div className="admin-header">
-          <div className="header-content">
-            <h1>🏨 Admin Dashboard</h1>
+      {/* Admin Header */}
+      <div className="admin-header">
+        <div className="header-content">
+          <div className="header-icon">
+            <FiZap />
+          </div>
+          <div>
+            <h1>Admin Dashboard</h1>
             <p>Manage your hostel operations</p>
           </div>
-          <button className="btn-refresh" onClick={fetchAdminData}>
-            <FiRefreshCw size={18} /> Refresh
-          </button>
         </div>
+        <button className="btn btn-glass" onClick={fetchAdminData}>
+          <FiRefreshCw /> Refresh
+        </button>
+      </div>
 
-        {/* Stats Grid */}
-        <div className="stats-grid">
-          <StatCard
-            icon={FiUsers}
-            title="Total Users"
-            value={stats.totalUsers}
-            color="#667eea"
-          />
-          <StatCard
-            icon={FiHome}
-            title="Total Rooms"
-            value={stats.totalRooms}
-            color="#f093fb"
-          />
-          <StatCard
-            icon={FiGrid}
-            title="Total Beds"
-            value={stats.totalBeds}
-            color="#4facfe"
-            subValue={`${stats.availableBeds} available`}
-          />
-          <StatCard
-            icon={FiCalendar}
-            title="Total Bookings"
-            value={stats.totalBookings}
-            color="#43e97b"
-          />
-          <StatCard
-            icon={FiDollarSign}
-            title="Total Revenue"
-            value={`₹${(stats.totalRevenue || 0).toLocaleString()}`}
-            color="#fa709a"
-          />
-          <StatCard
-            icon={FiTrendingUp}
-            title="Occupancy Rate"
-            value={`${stats.occupancyRate || 0}%`}
-            color="#30cfd0"
-          />
-        </div>
+      {/* Stats Grid */}
+      <div className="admin-stats-grid">
+        <StatCard
+          icon={FiUsers}
+          title="Total Users"
+          value={stats.totalUsers}
+          color="cyan"
+        />
+        <StatCard
+          icon={FiHome}
+          title="Total Rooms"
+          value={stats.totalRooms}
+          color="purple"
+        />
+        <StatCard
+          icon={IoBedOutline}
+          title="Total Beds"
+          value={stats.totalBeds}
+          color="pink"
+          subValue={`${stats.availableBeds} available`}
+        />
+        <StatCard
+          icon={FiCalendar}
+          title="Bookings"
+          value={stats.totalBookings}
+          color="green"
+        />
+        <StatCard
+          icon={FiDollarSign}
+          title="Revenue"
+          value={`₹${(stats.totalRevenue || 0).toLocaleString()}`}
+          color="yellow"
+        />
+        <StatCard
+          icon={FiTrendingUp}
+          title="Occupancy"
+          value={`${stats.occupancyRate || 0}%`}
+          color="cyan"
+        />
+      </div>
 
-        {/* Tabs */}
-        <div className="admin-tabs">
+      {/* Tabs */}
+      <div className="admin-tabs">
+        {[
+          { id: 'overview', icon: FiActivity, label: 'Overview' },
+          { id: 'rooms', icon: FiHome, label: 'Rooms' },
+          { id: 'bookings', icon: FiCalendar, label: 'Bookings' },
+          { id: 'users', icon: FiUsers, label: 'Users' }
+        ].map(tab => (
           <button
-            className={`tab-btn ${activeTab === 'overview' ? 'active' : ''}`}
-            onClick={() => setActiveTab('overview')}
+            key={tab.id}
+            className={`tab-btn ${activeTab === tab.id ? 'active' : ''}`}
+            onClick={() => setActiveTab(tab.id)}
           >
-            📊 Overview
+            <tab.icon /> {tab.label}
           </button>
-          <button
-            className={`tab-btn ${activeTab === 'rooms' ? 'active' : ''}`}
-            onClick={() => setActiveTab('rooms')}
-          >
-            🏠 Manage Rooms
-          </button>
-          <button
-            className={`tab-btn ${activeTab === 'bookings' ? 'active' : ''}`}
-            onClick={() => setActiveTab('bookings')}
-          >
-            📅 Bookings
-          </button>
-          <button
-            className={`tab-btn ${activeTab === 'users' ? 'active' : ''}`}
-            onClick={() => setActiveTab('users')}
-          >
-            👥 Users
-          </button>
-        </div>
+        ))}
+      </div>
 
-        {/* Tab Content */}
-        <div className="tab-content">
-          
-          {/* ============ OVERVIEW TAB ============ */}
-          {activeTab === 'overview' && (
-            <div className="overview-section">
-              <div className="overview-grid">
-                
-                {/* Booking Summary */}
-                <div className="overview-card">
-                  <h3>📊 Booking Summary</h3>
-                  <div className="summary-items">
-                    <div className="summary-item">
-                      <span className="dot confirmed"></span>
-                      <span>Confirmed</span>
-                      <strong>{stats.confirmedBookings || 0}</strong>
-                    </div>
-                    <div className="summary-item">
-                      <span className="dot pending"></span>
-                      <span>Pending</span>
-                      <strong>{stats.pendingBookings || 0}</strong>
-                    </div>
-                    <div className="summary-item">
-                      <span className="dot cancelled"></span>
-                      <span>Cancelled</span>
-                      <strong>{stats.cancelledBookings || 0}</strong>
-                    </div>
+      {/* Tab Content */}
+      <div className="admin-content">
+        
+        {/* Overview Tab */}
+        {activeTab === 'overview' && (
+          <div className="overview-section">
+            <div className="overview-grid">
+              {/* Booking Summary */}
+              <div className="overview-card">
+                <h3><FiLayers /> Booking Summary</h3>
+                <div className="summary-items">
+                  <div className="summary-item">
+                    <span className="dot green"></span>
+                    <span>Confirmed</span>
+                    <strong>{stats.confirmedBookings || 0}</strong>
                   </div>
-                </div>
-
-                {/* Room Summary */}
-                <div className="overview-card">
-                  <h3>🛏️ Room Summary</h3>
-                  <div className="summary-items">
-                    <div className="summary-item">
-                      <span>Total Beds</span>
-                      <strong>{stats.totalBeds || 0}</strong>
-                    </div>
-                    <div className="summary-item">
-                      <span>Available Beds</span>
-                      <strong className="text-success">{stats.availableBeds || 0}</strong>
-                    </div>
-                    <div className="summary-item">
-                      <span>Occupied Beds</span>
-                      <strong className="text-danger">{stats.occupiedBeds || 0}</strong>
-                    </div>
+                  <div className="summary-item">
+                    <span className="dot yellow"></span>
+                    <span>Pending</span>
+                    <strong>{stats.pendingBookings || 0}</strong>
                   </div>
-                </div>
-
-                {/* Quick Actions */}
-                <div className="overview-card">
-                  <h3>⚡ Quick Actions</h3>
-                  <div className="quick-actions">
-                    <button className="quick-btn" onClick={handleAddRoom}>
-                      <FiPlus /> Add Room
-                    </button>
-                    <button className="quick-btn" onClick={() => setActiveTab('bookings')}>
-                      <FiCalendar /> View Bookings
-                    </button>
-                    <button className="quick-btn" onClick={() => setActiveTab('users')}>
-                      <FiUsers /> View Users
-                    </button>
+                  <div className="summary-item">
+                    <span className="dot red"></span>
+                    <span>Cancelled</span>
+                    <strong>{stats.cancelledBookings || 0}</strong>
                   </div>
                 </div>
               </div>
 
-              {/* Recent Activity */}
-              <div className="recent-activity">
-                <h3>🕒 Recent Bookings</h3>
-                {recentBookings.length === 0 ? (
-                  <p className="no-data">No recent bookings</p>
-                ) : (
-                  <div className="activity-list">
-                    {recentBookings.slice(0, 5).map((booking) => (
-                      <div key={booking._id} className="activity-item">
-                        <div className="activity-info">
-                          <strong>{booking.user?.name || 'Unknown'}</strong>
-                          <span>booked {booking.room?.name || 'Room'}</span>
-                        </div>
-                        {getStatusBadge(booking.status)}
-                      </div>
-                    ))}
+              {/* Room Summary */}
+              <div className="overview-card">
+                <h3><IoBedOutline /> Room Summary</h3>
+                <div className="summary-items">
+                  <div className="summary-item">
+                    <span>Total Beds</span>
+                    <strong>{stats.totalBeds || 0}</strong>
                   </div>
-                )}
-              </div>
-            </div>
-          )}
-
-          {/* ============ ROOMS TAB ============ */}
-          {activeTab === 'rooms' && (
-            <div className="rooms-section">
-              <div className="section-header">
-                <h3>🏠 Manage Rooms ({allRooms.length})</h3>
-                <button className="btn-add" onClick={handleAddRoom}>
-                  <FiPlus size={18} /> Add New Room
-                </button>
+                  <div className="summary-item">
+                    <span>Available</span>
+                    <strong className="text-success">{stats.availableBeds || 0}</strong>
+                  </div>
+                  <div className="summary-item">
+                    <span>Occupied</span>
+                    <strong className="text-danger">{(stats.totalBeds - stats.availableBeds) || 0}</strong>
+                  </div>
+                </div>
               </div>
 
-              {allRooms.length === 0 ? (
-                <div className="empty-state">
-                  <FiHome size={64} />
-                  <h3>No Rooms Yet</h3>
-                  <p>Start by adding your first room</p>
-                  <button className="btn-add" onClick={handleAddRoom}>
-                    <FiPlus /> Add First Room
+              {/* Quick Actions */}
+              <div className="overview-card">
+                <h3><FiZap /> Quick Actions</h3>
+                <div className="quick-actions">
+                  <button className="quick-btn" onClick={handleAddRoom}>
+                    <FiPlus /> Add Room
+                  </button>
+                  <button className="quick-btn" onClick={() => setActiveTab('bookings')}>
+                    <FiCalendar /> View Bookings
+                  </button>
+                  <button className="quick-btn" onClick={() => setActiveTab('users')}>
+                    <FiUsers /> View Users
                   </button>
                 </div>
+              </div>
+            </div>
+
+            {/* Recent Bookings */}
+            <div className="recent-section">
+              <h3><FiClock /> Recent Bookings</h3>
+              {recentBookings.length === 0 ? (
+                <p className="no-data">No recent bookings</p>
               ) : (
-                <div className="rooms-grid">
-                  {allRooms.map((room) => (
-                    <div key={room._id} className={`room-card ${!room.isActive ? 'inactive' : ''}`}>
-                      
-                      {/* Room Image */}
-                      <div className="room-image">
-                        <img 
-                          src={room.images?.[0] || 'https://images.unsplash.com/photo-1631049307264-da0ec9d70304'} 
-                          alt={room.name} 
-                        />
-                        <div className="room-badges">
-                          <span className={`badge-type ${room.roomType === 'AC' ? 'ac' : 'non-ac'}`}>
-                            {room.roomType}
-                          </span>
-                          {!room.isActive && <span className="badge-inactive">Inactive</span>}
-                        </div>
-                        <span className="room-price">₹{room.pricePerBed}/bed</span>
+                <div className="recent-list">
+                  {recentBookings.slice(0, 5).map((booking) => (
+                    <div key={booking._id} className="recent-item">
+                      <div className="recent-info">
+                        <strong>{booking.user?.name || 'Unknown'}</strong>
+                        <span>booked {booking.room?.name || 'Room'}</span>
                       </div>
-
-                      {/* Room Details */}
-                      <div className="room-details">
-                        <h4>{room.name}</h4>
-                        <p className="room-number">Room: {room.roomNumber} | Floor: {room.floor}</p>
-                        
-                        <div className="room-info">
-                          <span>🛏️ {room.sharingType} Sharing</span>
-                          <span>✅ {room.availableBeds}/{room.totalBeds} Available</span>
-                        </div>
-
-                        {/* Amenities */}
-                        {room.amenities?.length > 0 && (
-                          <div className="room-amenities">
-                            {room.amenities.slice(0, 3).map((amenity, idx) => (
-                              <span key={idx} className="amenity-tag">{amenity}</span>
-                            ))}
-                            {room.amenities.length > 3 && (
-                              <span className="amenity-tag more">+{room.amenities.length - 3}</span>
-                            )}
-                          </div>
-                        )}
-
-                        {/* Actions */}
-                        <div className="room-actions">
-                          <button 
-                            className="btn-icon view" 
-                            onClick={() => handleViewRoom(room)}
-                            title="View Details"
-                          >
-                            <FiEye size={16} />
-                          </button>
-                          <button 
-                            className="btn-icon edit" 
-                            onClick={() => handleEditRoom(room)}
-                            title="Edit Room"
-                          >
-                            <FiEdit size={16} />
-                          </button>
-                          <button 
-                            className="btn-icon toggle"
-                            onClick={() => handleToggleRoomStatus(room._id)}
-                            title={room.isActive ? 'Deactivate' : 'Activate'}
-                          >
-                            {room.isActive ? <FiToggleRight size={16} /> : <FiToggleLeft size={16} />}
-                          </button>
-                          <button 
-                            className="btn-icon delete" 
-                            onClick={() => handleDeleteRoom(room._id)}
-                            title="Delete Room"
-                          >
-                            <FiTrash2 size={16} />
-                          </button>
-                        </div>
-                      </div>
+                      {getStatusBadge(booking.status)}
                     </div>
                   ))}
                 </div>
               )}
             </div>
-          )}
+          </div>
+        )}
 
-          {/* ============ BOOKINGS TAB ============ */}
-          {activeTab === 'bookings' && (
-            <div className="bookings-section">
-              <div className="section-header">
-                <h3>📅 Recent Bookings ({recentBookings.length})</h3>
-              </div>
-
-              {recentBookings.length === 0 ? (
-                <div className="empty-state">
-                  <FiCalendar size={64} />
-                  <h3>No Bookings Yet</h3>
-                  <p>Bookings will appear here once users make reservations</p>
-                </div>
-              ) : (
-                <div className="table-container">
-                  <table className="admin-table">
-                    <thead>
-                      <tr>
-                        <th>ID</th>
-                        <th>User</th>
-                        <th>Room</th>
-                        <th>Bed</th>
-                        <th>Check-in</th>
-                        <th>Check-out</th>
-                        <th>Amount</th>
-                        <th>Status</th>
-                        <th>Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {recentBookings.map((booking) => (
-                        <tr key={booking._id}>
-                          <td><code>{booking._id?.slice(-6)}</code></td>
-                          <td>
-                            <div className="cell-user">
-                              <strong>{booking.user?.name || 'N/A'}</strong>
-                              <small>{booking.user?.email}</small>
-                            </div>
-                          </td>
-                          <td>{booking.room?.name || 'N/A'}</td>
-                          <td>Bed {booking.bed?.bedNumber || 'N/A'}</td>
-                          <td>
-                            {booking.checkInDate 
-                              ? format(new Date(booking.checkInDate), 'MMM dd, yyyy')
-                              : 'N/A'}
-                          </td>
-                          <td>
-                            {booking.checkOutDate 
-                              ? format(new Date(booking.checkOutDate), 'MMM dd, yyyy')
-                              : 'N/A'}
-                          </td>
-                          <td><strong>₹{booking.totalAmount || 0}</strong></td>
-                          <td>{getStatusBadge(booking.status)}</td>
-                          <td>
-                            <div className="action-buttons">
-                              {booking.status === 'pending' && (
-                                <>
-                                  <button
-                                    className="btn-sm success"
-                                    onClick={() => handleUpdateBookingStatus(booking._id, 'confirmed')}
-                                  >
-                                    ✓ Confirm
-                                  </button>
-                                  <button
-                                    className="btn-sm danger"
-                                    onClick={() => handleUpdateBookingStatus(booking._id, 'cancelled')}
-                                  >
-                                    ✕ Cancel
-                                  </button>
-                                </>
-                              )}
-                              {booking.status === 'confirmed' && (
-                                <button
-                                  className="btn-sm info"
-                                  onClick={() => handleUpdateBookingStatus(booking._id, 'checked-in')}
-                                >
-                                  Check In
-                                </button>
-                              )}
-                              {booking.status === 'checked-in' && (
-                                <button
-                                  className="btn-sm secondary"
-                                  onClick={() => handleUpdateBookingStatus(booking._id, 'checked-out')}
-                                >
-                                  Check Out
-                                </button>
-                              )}
-                            </div>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              )}
+        {/* Rooms Tab */}
+        {activeTab === 'rooms' && (
+          <div className="rooms-section">
+            <div className="section-header">
+              <h3><FiHome /> Manage Rooms ({allRooms.length})</h3>
+              <button className="btn btn-primary" onClick={handleAddRoom}>
+                <FiPlus /> Add Room
+              </button>
             </div>
-          )}
 
-          {/* ============ USERS TAB ============ */}
-          {activeTab === 'users' && (
-            <div className="users-section">
-              <div className="section-header">
-                <h3>👥 Recent Users ({recentUsers.length})</h3>
+            {allRooms.length === 0 ? (
+              <div className="empty-state">
+                <IoBedOutline />
+                <h3>No Rooms Yet</h3>
+                <p>Start by adding your first room</p>
+                <button className="btn btn-primary" onClick={handleAddRoom}>
+                  <FiPlus /> Add First Room
+                </button>
               </div>
+            ) : (
+              <div className="admin-rooms-grid">
+                {allRooms.map((room) => (
+                  <div key={room._id} className={`admin-room-card ${!room.isActive ? 'inactive' : ''}`}>
+                    <div className="room-image">
+                      {room.images?.[0] ? (
+                        <img src={room.images[0]} alt={room.name} />
+                      ) : (
+                        <div className="placeholder-image">
+                          <IoBedOutline />
+                        </div>
+                      )}
+                      <div className="room-badges">
+                        <span className={`type-badge ${room.roomType === 'AC' ? 'ac' : 'non-ac'}`}>
+                          {room.roomType}
+                        </span>
+                        {!room.isActive && <span className="inactive-badge">Inactive</span>}
+                      </div>
+                      <span className="price-badge">₹{room.pricePerBed}/bed</span>
+                    </div>
 
-              {recentUsers.length === 0 ? (
-                <div className="empty-state">
-                  <FiUsers size={64} />
-                  <h3>No Users Yet</h3>
-                  <p>Users will appear here once they register</p>
-                </div>
-              ) : (
-                <div className="table-container">
-                  <table className="admin-table">
-                    <thead>
-                      <tr>
-                        <th>ID</th>
-                        <th>Name</th>
-                        <th>Email</th>
-                        <th>Phone</th>
-                        <th>Role</th>
-                        <th>Joined</th>
-                        <th>Bookings</th>
-                        <th>Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {recentUsers.map((user) => (
-                        <tr key={user._id}>
-                          <td><code>{user._id?.slice(-6)}</code></td>
-                          <td><strong>{user.name}</strong></td>
-                          <td>{user.email}</td>
-                          <td>{user.phone || 'N/A'}</td>
-                          <td>
-                            <span className={`badge badge-${user.role === 'admin' ? 'danger' : 'primary'}`}>
-                              {user.role}
-                            </span>
-                          </td>
-                          <td>
-                            {user.createdAt 
-                              ? format(new Date(user.createdAt), 'MMM dd, yyyy')
-                              : 'N/A'}
-                          </td>
-                          <td>{user.bookingsCount || 0}</td>
-                          <td>
-                            {user.role !== 'admin' && (
+                    <div className="room-details">
+                      <h4>{room.name}</h4>
+                      <p className="room-meta">Room {room.roomNumber} | Floor {room.floor}</p>
+                      
+                      <div className="room-stats">
+                        <span><IoBedOutline /> {room.sharingType} Sharing</span>
+                        <span><FiCheckCircle /> {room.availableBeds}/{room.totalBeds}</span>
+                      </div>
+
+                      {room.amenities?.length > 0 && (
+                        <div className="room-amenities">
+                          {room.amenities.slice(0, 3).map((amenity, idx) => (
+                            <span key={idx} className="amenity-chip">{amenity}</span>
+                          ))}
+                          {room.amenities.length > 3 && (
+                            <span className="amenity-chip more">+{room.amenities.length - 3}</span>
+                          )}
+                        </div>
+                      )}
+
+                      <div className="room-actions">
+                        <button className="action-btn view" onClick={() => handleViewRoom(room)} title="View">
+                          <FiEye />
+                        </button>
+                        <button className="action-btn edit" onClick={() => handleEditRoom(room)} title="Edit">
+                          <FiEdit />
+                        </button>
+                        <button className="action-btn toggle" onClick={() => handleToggleRoomStatus(room._id)} title="Toggle Status">
+                          {room.isActive ? <FiToggleRight /> : <FiToggleLeft />}
+                        </button>
+                        <button className="action-btn delete" onClick={() => handleDeleteRoom(room._id)} title="Delete">
+                          <FiTrash2 />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Bookings Tab */}
+        {activeTab === 'bookings' && (
+          <div className="bookings-section">
+            <div className="section-header">
+              <h3><FiCalendar /> Recent Bookings ({recentBookings.length})</h3>
+            </div>
+
+            {recentBookings.length === 0 ? (
+              <div className="empty-state">
+                <FiCalendar />
+                <h3>No Bookings Yet</h3>
+                <p>Bookings will appear here</p>
+              </div>
+            ) : (
+              <div className="table-wrapper">
+                <table className="admin-table">
+                  <thead>
+                    <tr>
+                      <th>ID</th>
+                      <th>User</th>
+                      <th>Room</th>
+                      <th>Bed</th>
+                      <th>Check-in</th>
+                      <th>Check-out</th>
+                      <th>Amount</th>
+                      <th>Status</th>
+                      <th>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {recentBookings.map((booking) => (
+                      <tr key={booking._id}>
+                        <td><code>#{booking._id?.slice(-6)}</code></td>
+                        <td>
+                          <div className="user-cell">
+                            <strong>{booking.user?.name || 'N/A'}</strong>
+                            <small>{booking.user?.email}</small>
+                          </div>
+                        </td>
+                        <td>{booking.room?.name || 'N/A'}</td>
+                        <td>Bed {booking.bed?.bedNumber || 'N/A'}</td>
+                        <td>
+                          {booking.checkInDate 
+                            ? format(new Date(booking.checkInDate), 'MMM dd, yyyy')
+                            : 'N/A'}
+                        </td>
+                        <td>
+                          {booking.checkOutDate 
+                            ? format(new Date(booking.checkOutDate), 'MMM dd, yyyy')
+                            : 'N/A'}
+                        </td>
+                        <td><span className="amount">₹{booking.totalAmount || 0}</span></td>
+                        <td>{getStatusBadge(booking.status)}</td>
+                        <td>
+                          <div className="table-actions">
+                            {booking.status === 'pending' && (
+                              <>
+                                <button
+                                  className="btn-action success"
+                                  onClick={() => handleUpdateBookingStatus(booking._id, 'confirmed')}
+                                >
+                                  <FiCheckCircle /> Confirm
+                                </button>
+                                <button
+                                  className="btn-action danger"
+                                  onClick={() => handleUpdateBookingStatus(booking._id, 'cancelled')}
+                                >
+                                  <FiXCircle /> Cancel
+                                </button>
+                              </>
+                            )}
+                            {booking.status === 'confirmed' && (
                               <button
-                                className="btn-sm danger"
-                                onClick={() => handleDeleteUser(user._id)}
+                                className="btn-action info"
+                                onClick={() => handleUpdateBookingStatus(booking._id, 'checked-in')}
                               >
-                                <FiTrash2 size={14} /> Delete
+                                Check In
                               </button>
                             )}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              )}
+                            {booking.status === 'checked-in' && (
+                              <button
+                                className="btn-action secondary"
+                                onClick={() => handleUpdateBookingStatus(booking._id, 'checked-out')}
+                              >
+                                Check Out
+                              </button>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Users Tab */}
+        {activeTab === 'users' && (
+          <div className="users-section">
+            <div className="section-header">
+              <h3><FiUsers /> Recent Users ({recentUsers.length})</h3>
             </div>
-          )}
-        </div>
+
+            {recentUsers.length === 0 ? (
+              <div className="empty-state">
+                <FiUsers />
+                <h3>No Users Yet</h3>
+                <p>Users will appear here</p>
+              </div>
+            ) : (
+              <div className="table-wrapper">
+                <table className="admin-table">
+                  <thead>
+                    <tr>
+                      <th>ID</th>
+                      <th>Name</th>
+                      <th>Email</th>
+                      <th>Phone</th>
+                      <th>Role</th>
+                      <th>Joined</th>
+                      <th>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {recentUsers.map((user) => (
+                      <tr key={user._id}>
+                        <td><code>#{user._id?.slice(-6)}</code></td>
+                        <td><strong>{user.name}</strong></td>
+                        <td>{user.email}</td>
+                        <td>{user.phone || 'N/A'}</td>
+                        <td>
+                          <span className={`status-badge badge-${user.role === 'admin' ? 'danger' : 'info'}`}>
+                            {user.role}
+                          </span>
+                        </td>
+                        <td>
+                          {user.createdAt 
+                            ? format(new Date(user.createdAt), 'MMM dd, yyyy')
+                            : 'N/A'}
+                        </td>
+                        <td>
+                          {user.role !== 'admin' && (
+                            <button
+                              className="btn-action danger"
+                              onClick={() => handleDeleteUser(user._id)}
+                            >
+                              <FiTrash2 /> Delete
+                            </button>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
-      {/* ============ ADD/EDIT ROOM MODAL ============ */}
+      {/* Add/Edit Room Modal */}
       {showRoomModal && (
         <div className="modal-overlay" onClick={() => setShowRoomModal(false)}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
               <h3>{editingRoom ? '✏️ Edit Room' : '➕ Add New Room'}</h3>
               <button className="modal-close" onClick={() => setShowRoomModal(false)}>
-                <FiX size={24} />
+                <FiX />
               </button>
             </div>
 
@@ -725,6 +678,7 @@ const AdminPanel = () => {
                   <label>Room Name *</label>
                   <input
                     type="text"
+                    className="form-control"
                     value={roomForm.name}
                     onChange={(e) => setRoomForm({ ...roomForm, name: e.target.value })}
                     placeholder="e.g., Deluxe AC Room"
@@ -735,6 +689,7 @@ const AdminPanel = () => {
                   <label>Room Number *</label>
                   <input
                     type="text"
+                    className="form-control"
                     value={roomForm.roomNumber}
                     onChange={(e) => setRoomForm({ ...roomForm, roomNumber: e.target.value })}
                     placeholder="e.g., A101"
@@ -748,6 +703,7 @@ const AdminPanel = () => {
                   <label>Floor *</label>
                   <input
                     type="number"
+                    className="form-control"
                     value={roomForm.floor}
                     onChange={(e) => setRoomForm({ ...roomForm, floor: e.target.value })}
                     placeholder="e.g., 1"
@@ -758,6 +714,7 @@ const AdminPanel = () => {
                 <div className="form-group">
                   <label>Sharing Type *</label>
                   <select
+                    className="form-control"
                     value={roomForm.sharingType}
                     onChange={(e) => setRoomForm({ ...roomForm, sharingType: e.target.value })}
                     required
@@ -775,6 +732,7 @@ const AdminPanel = () => {
                 <div className="form-group">
                   <label>Room Type *</label>
                   <select
+                    className="form-control"
                     value={roomForm.roomType}
                     onChange={(e) => setRoomForm({ ...roomForm, roomType: e.target.value })}
                     required
@@ -787,6 +745,7 @@ const AdminPanel = () => {
                   <label>Price per Bed (₹) *</label>
                   <input
                     type="number"
+                    className="form-control"
                     value={roomForm.pricePerBed}
                     onChange={(e) => setRoomForm({ ...roomForm, pricePerBed: e.target.value })}
                     placeholder="e.g., 5000"
@@ -799,6 +758,7 @@ const AdminPanel = () => {
               <div className="form-group">
                 <label>Description</label>
                 <textarea
+                  className="form-control"
                   value={roomForm.description}
                   onChange={(e) => setRoomForm({ ...roomForm, description: e.target.value })}
                   placeholder="Enter room description..."
@@ -810,9 +770,10 @@ const AdminPanel = () => {
                 <label>Amenities (comma separated)</label>
                 <input
                   type="text"
+                  className="form-control"
                   value={roomForm.amenities}
                   onChange={(e) => setRoomForm({ ...roomForm, amenities: e.target.value })}
-                  placeholder="WiFi, AC, TV, Attached Bathroom, etc."
+                  placeholder="WiFi, AC, TV, Attached Bathroom"
                 />
               </div>
 
@@ -820,25 +781,18 @@ const AdminPanel = () => {
                 <label>Image URLs (comma separated)</label>
                 <input
                   type="text"
+                  className="form-control"
                   value={roomForm.images}
                   onChange={(e) => setRoomForm({ ...roomForm, images: e.target.value })}
-                  placeholder="https://example.com/image1.jpg, https://example.com/image2.jpg"
+                  placeholder="https://example.com/image1.jpg"
                 />
               </div>
 
               <div className="form-actions">
-                <button 
-                  type="button" 
-                  className="btn-cancel" 
-                  onClick={() => setShowRoomModal(false)}
-                >
+                <button type="button" className="btn btn-secondary" onClick={() => setShowRoomModal(false)}>
                   Cancel
                 </button>
-                <button 
-                  type="submit" 
-                  className="btn-submit"
-                  disabled={formLoading}
-                >
+                <button type="submit" className="btn btn-primary" disabled={formLoading}>
                   {formLoading ? 'Saving...' : (editingRoom ? 'Update Room' : 'Add Room')}
                 </button>
               </div>
@@ -847,53 +801,48 @@ const AdminPanel = () => {
         </div>
       )}
 
-      {/* ============ VIEW ROOM MODAL ============ */}
+      {/* View Room Modal */}
       {showViewModal && viewingRoom && (
         <div className="modal-overlay" onClick={() => setShowViewModal(false)}>
           <div className="modal-content view-modal" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
-              <h3>🏠 Room Details</h3>
+              <h3><FiHome /> Room Details</h3>
               <button className="modal-close" onClick={() => setShowViewModal(false)}>
-                <FiX size={24} />
+                <FiX />
               </button>
             </div>
 
             <div className="view-content">
               {viewingRoom.images?.[0] && (
-                <img 
-                  src={viewingRoom.images[0]} 
-                  alt={viewingRoom.name}
-                  className="view-image"
-                />
+                <img src={viewingRoom.images[0]} alt={viewingRoom.name} className="view-image" />
               )}
 
               <div className="view-details">
                 <h2>{viewingRoom.name}</h2>
-                <p className="view-room-number">Room {viewingRoom.roomNumber} | Floor {viewingRoom.floor}</p>
+                <p className="view-meta">Room {viewingRoom.roomNumber} | Floor {viewingRoom.floor}</p>
                 
                 <div className="view-badges">
-                  <span className={`badge-type ${viewingRoom.roomType === 'AC' ? 'ac' : 'non-ac'}`}>
+                  <span className={`type-badge ${viewingRoom.roomType === 'AC' ? 'ac' : 'non-ac'}`}>
                     {viewingRoom.roomType}
                   </span>
-                  <span className="badge-sharing">{viewingRoom.sharingType} Sharing</span>
-                  <span className="badge-price">₹{viewingRoom.pricePerBed}/bed</span>
+                  <span className="sharing-badge">{viewingRoom.sharingType} Sharing</span>
+                  <span className="price-tag">₹{viewingRoom.pricePerBed}/bed</span>
                 </div>
 
-                <div className="view-section">
-                  <h4>Description</h4>
-                  <p>{viewingRoom.description || 'No description available'}</p>
-                </div>
+                {viewingRoom.description && (
+                  <div className="view-section">
+                    <h4>Description</h4>
+                    <p>{viewingRoom.description}</p>
+                  </div>
+                )}
 
                 <div className="view-section">
                   <h4>Bed Status</h4>
                   <div className="beds-status">
                     {viewingRoom.beds?.map((bed) => (
-                      <div 
-                        key={bed._id} 
-                        className={`bed-item ${bed.isOccupied ? 'occupied' : 'available'}`}
-                      >
-                        <span>Bed {bed.bedNumber}</span>
-                        <span>{bed.isOccupied ? '🔴 Occupied' : '🟢 Available'}</span>
+                      <div key={bed._id} className={`bed-chip ${bed.isOccupied ? 'occupied' : 'available'}`}>
+                        Bed {bed.bedNumber}
+                        <span>{bed.isOccupied ? '🔴' : '🟢'}</span>
                       </div>
                     ))}
                   </div>
@@ -904,7 +853,7 @@ const AdminPanel = () => {
                     <h4>Amenities</h4>
                     <div className="amenities-list">
                       {viewingRoom.amenities.map((amenity, idx) => (
-                        <span key={idx} className="amenity-tag">{amenity}</span>
+                        <span key={idx} className="amenity-chip">{amenity}</span>
                       ))}
                     </div>
                   </div>
@@ -915,17 +864,20 @@ const AdminPanel = () => {
         </div>
       )}
 
-      {/* ============ STYLES ============ */}
       <style jsx>{`
         .admin-panel {
-          min-height: 100vh;
-          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-          padding: 2rem 1rem;
+          padding: 2rem;
+          max-width: 1600px;
+          margin: 0 auto;
         }
 
-        .admin-container {
-          max-width: 1400px;
-          margin: 0 auto;
+        .admin-loading {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          min-height: 60vh;
+          color: #94A3B8;
         }
 
         /* Header */
@@ -938,149 +890,163 @@ const AdminPanel = () => {
           gap: 1rem;
         }
 
-        .header-content h1 {
-          font-size: 2rem;
-          color: white;
+        .header-content {
+          display: flex;
+          align-items: center;
+          gap: 1rem;
+        }
+
+        .header-icon {
+          width: 60px;
+          height: 60px;
+          background: linear-gradient(135deg, #22D3EE, #A855F7);
+          border-radius: 16px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 1.75rem;
+          color: #0A0F1C;
+          box-shadow: 0 0 30px rgba(34, 211, 238, 0.4);
+        }
+
+        .admin-header h1 {
+          font-family: 'Orbitron', sans-serif;
+          font-size: 1.75rem;
+          color: #F8FAFC;
           margin: 0;
         }
 
-        .header-content p {
-          color: rgba(255,255,255,0.8);
-          margin: 0.25rem 0 0 0;
-        }
-
-        .btn-refresh {
-          display: flex;
-          align-items: center;
-          gap: 0.5rem;
-          padding: 0.75rem 1.5rem;
-          background: rgba(255,255,255,0.2);
-          color: white;
-          border: 1px solid rgba(255,255,255,0.3);
-          border-radius: 8px;
-          cursor: pointer;
-          transition: all 0.3s;
-        }
-
-        .btn-refresh:hover {
-          background: rgba(255,255,255,0.3);
-        }
-
-        /* Loading */
-        .loading-container {
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          justify-content: center;
-          min-height: 60vh;
-          color: white;
-        }
-
-        .loading-spinner {
-          width: 50px;
-          height: 50px;
-          border: 4px solid rgba(255,255,255,0.3);
-          border-top-color: white;
-          border-radius: 50%;
-          animation: spin 1s linear infinite;
-        }
-
-        @keyframes spin {
-          to { transform: rotate(360deg); }
+        .admin-header p {
+          color: #64748B;
+          margin: 0;
         }
 
         /* Stats Grid */
-        .stats-grid {
+        .admin-stats-grid {
           display: grid;
           grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-          gap: 1rem;
+          gap: 1.5rem;
           margin-bottom: 2rem;
         }
 
-        .stat-card {
-          background: white;
-          border-radius: 12px;
-          padding: 1.25rem;
+        .admin-stat-card {
+          background: rgba(17, 24, 39, 0.8);
+          border-radius: 16px;
+          padding: 1.5rem;
+          border: 1px solid rgba(34, 211, 238, 0.15);
           display: flex;
           align-items: center;
           gap: 1rem;
-          box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-          transition: transform 0.3s;
+          position: relative;
+          overflow: hidden;
+          transition: all 0.3s ease;
         }
 
-        .stat-card:hover {
-          transform: translateY(-3px);
+        .admin-stat-card:hover {
+          transform: translateY(-5px);
+          border-color: rgba(34, 211, 238, 0.4);
+          box-shadow: 0 0 30px rgba(34, 211, 238, 0.2);
         }
 
-        .stat-icon {
-          width: 50px;
-          height: 50px;
-          border-radius: 10px;
+        .stat-glow {
+          position: absolute;
+          top: 0;
+          left: 0;
+          right: 0;
+          height: 3px;
+          background: linear-gradient(90deg, #22D3EE, #A855F7, #EC4899);
+          opacity: 0;
+          transition: opacity 0.3s ease;
+        }
+
+        .admin-stat-card:hover .stat-glow {
+          opacity: 1;
+        }
+
+        .admin-stat-card .stat-icon {
+          width: 56px;
+          height: 56px;
+          border-radius: 14px;
           display: flex;
           align-items: center;
           justify-content: center;
         }
 
+        .stat-icon.cyan { background: rgba(34, 211, 238, 0.15); color: #22D3EE; }
+        .stat-icon.purple { background: rgba(168, 85, 247, 0.15); color: #A855F7; }
+        .stat-icon.pink { background: rgba(236, 72, 153, 0.15); color: #EC4899; }
+        .stat-icon.green { background: rgba(16, 185, 129, 0.15); color: #10B981; }
+        .stat-icon.yellow { background: rgba(251, 191, 36, 0.15); color: #FBBF24; }
+
         .stat-details h3 {
-          font-size: 1.5rem;
+          font-family: 'Orbitron', sans-serif;
+          font-size: 1.75rem;
+          font-weight: 700;
+          background: linear-gradient(135deg, #22D3EE, #A855F7);
+          -webkit-background-clip: text;
+          -webkit-text-fill-color: transparent;
           margin: 0;
-          color: #1a1a2e;
         }
 
         .stat-details p {
+          color: #64748B;
+          font-size: 0.9rem;
           margin: 0;
-          color: #6b7280;
-          font-size: 0.875rem;
         }
 
         .stat-sub {
           font-size: 0.75rem;
-          color: #10b981;
+          color: #10B981;
         }
 
         /* Tabs */
         .admin-tabs {
           display: flex;
           gap: 0.5rem;
-          margin-bottom: 1.5rem;
-          background: white;
+          margin-bottom: 2rem;
+          background: rgba(17, 24, 39, 0.6);
           padding: 0.5rem;
-          border-radius: 12px;
+          border-radius: 16px;
+          border: 1px solid rgba(34, 211, 238, 0.1);
           overflow-x: auto;
         }
 
         .tab-btn {
-          flex: 1;
-          min-width: fit-content;
-          padding: 0.75rem 1rem;
+          display: flex;
+          align-items: center;
+          gap: 0.5rem;
+          padding: 0.875rem 1.5rem;
           border: none;
           background: transparent;
-          border-radius: 8px;
+          border-radius: 12px;
           font-weight: 600;
           cursor: pointer;
-          transition: all 0.3s;
-          color: #6b7280;
+          transition: all 0.3s ease;
+          color: #64748B;
           white-space: nowrap;
+          font-family: inherit;
         }
 
         .tab-btn.active {
-          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-          color: white;
+          background: linear-gradient(135deg, #22D3EE, #A855F7);
+          color: #0A0F1C;
+          box-shadow: 0 0 20px rgba(34, 211, 238, 0.3);
         }
 
         .tab-btn:hover:not(.active) {
-          background: #f3f4f6;
+          background: rgba(34, 211, 238, 0.1);
+          color: #22D3EE;
         }
 
-        /* Tab Content */
-        .tab-content {
-          background: white;
-          border-radius: 12px;
-          padding: 1.5rem;
+        /* Admin Content */
+        .admin-content {
+          background: rgba(17, 24, 39, 0.6);
+          border-radius: 20px;
+          padding: 2rem;
+          border: 1px solid rgba(34, 211, 238, 0.1);
           min-height: 400px;
         }
 
-        /* Section Header */
         .section-header {
           display: flex;
           justify-content: space-between;
@@ -1091,43 +1057,15 @@ const AdminPanel = () => {
         }
 
         .section-header h3 {
-          margin: 0;
-          color: #1a1a2e;
-        }
-
-        .btn-add {
           display: flex;
           align-items: center;
           gap: 0.5rem;
-          padding: 0.75rem 1.5rem;
-          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-          color: white;
-          border: none;
-          border-radius: 8px;
-          cursor: pointer;
-          font-weight: 600;
-          transition: transform 0.3s;
+          margin: 0;
+          color: #F8FAFC;
         }
 
-        .btn-add:hover {
-          transform: translateY(-2px);
-        }
-
-        /* Empty State */
-        .empty-state {
-          text-align: center;
-          padding: 3rem;
-          color: #6b7280;
-        }
-
-        .empty-state svg {
-          opacity: 0.3;
-          margin-bottom: 1rem;
-        }
-
-        .empty-state h3 {
-          color: #1a1a2e;
-          margin-bottom: 0.5rem;
+        .section-header h3 svg {
+          color: #22D3EE;
         }
 
         /* Overview */
@@ -1139,15 +1077,23 @@ const AdminPanel = () => {
         }
 
         .overview-card {
-          background: #f9fafb;
-          border-radius: 12px;
+          background: rgba(255, 255, 255, 0.02);
+          border-radius: 16px;
           padding: 1.5rem;
+          border: 1px solid rgba(34, 211, 238, 0.1);
         }
 
         .overview-card h3 {
-          margin: 0 0 1rem 0;
-          font-size: 1.1rem;
-          color: #1a1a2e;
+          display: flex;
+          align-items: center;
+          gap: 0.5rem;
+          margin-bottom: 1rem;
+          font-size: 1rem;
+          color: #F8FAFC;
+        }
+
+        .overview-card h3 svg {
+          color: #22D3EE;
         }
 
         .summary-items {
@@ -1158,23 +1104,25 @@ const AdminPanel = () => {
 
         .summary-item {
           display: flex;
-          justify-content: space-between;
           align-items: center;
+          justify-content: space-between;
+          padding: 0.5rem 0;
+          color: #94A3B8;
         }
 
         .dot {
           width: 10px;
           height: 10px;
           border-radius: 50%;
-          margin-right: 0.5rem;
+          margin-right: 0.75rem;
         }
 
-        .dot.confirmed { background: #10b981; }
-        .dot.pending { background: #f59e0b; }
-        .dot.cancelled { background: #ef4444; }
+        .dot.green { background: #10B981; }
+        .dot.yellow { background: #FBBF24; }
+        .dot.red { background: #EF4444; }
 
-        .text-success { color: #10b981; }
-        .text-danger { color: #ef4444; }
+        .text-success { color: #10B981 !important; }
+        .text-danger { color: #EF4444 !important; }
 
         .quick-actions {
           display: flex;
@@ -1187,85 +1135,117 @@ const AdminPanel = () => {
           align-items: center;
           gap: 0.5rem;
           padding: 0.75rem 1rem;
-          background: white;
-          border: 1px solid #e5e7eb;
-          border-radius: 8px;
+          background: rgba(255, 255, 255, 0.03);
+          border: 1px solid rgba(34, 211, 238, 0.15);
+          border-radius: 10px;
+          color: #94A3B8;
           cursor: pointer;
-          transition: all 0.2s;
+          transition: all 0.3s ease;
+          font-family: inherit;
         }
 
         .quick-btn:hover {
-          background: #667eea;
-          color: white;
-          border-color: #667eea;
+          background: rgba(34, 211, 238, 0.1);
+          border-color: #22D3EE;
+          color: #22D3EE;
         }
 
-        /* Recent Activity */
-        .recent-activity h3 {
+        /* Recent Section */
+        .recent-section {
+          background: rgba(255, 255, 255, 0.02);
+          border-radius: 16px;
+          padding: 1.5rem;
+          border: 1px solid rgba(34, 211, 238, 0.1);
+        }
+
+        .recent-section h3 {
+          display: flex;
+          align-items: center;
+          gap: 0.5rem;
           margin-bottom: 1rem;
-          color: #1a1a2e;
+          color: #F8FAFC;
         }
 
-        .activity-list {
+        .recent-section h3 svg {
+          color: #22D3EE;
+        }
+
+        .recent-list {
           display: flex;
           flex-direction: column;
           gap: 0.75rem;
         }
 
-        .activity-item {
+        .recent-item {
           display: flex;
           justify-content: space-between;
           align-items: center;
-          padding: 0.75rem;
-          background: #f9fafb;
-          border-radius: 8px;
+          padding: 0.75rem 1rem;
+          background: rgba(255, 255, 255, 0.02);
+          border-radius: 10px;
+          border: 1px solid rgba(34, 211, 238, 0.08);
         }
 
-        .activity-info span {
-          color: #6b7280;
+        .recent-info strong {
+          color: #F8FAFC;
+        }
+
+        .recent-info span {
+          color: #64748B;
           margin-left: 0.5rem;
         }
 
         .no-data {
-          color: #6b7280;
+          color: #64748B;
           text-align: center;
           padding: 2rem;
         }
 
         /* Rooms Grid */
-        .rooms-grid {
+        .admin-rooms-grid {
           display: grid;
           grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
           gap: 1.5rem;
         }
 
-        .room-card {
-          background: white;
-          border-radius: 12px;
+        .admin-room-card {
+          background: rgba(255, 255, 255, 0.02);
+          border-radius: 16px;
           overflow: hidden;
-          box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-          transition: all 0.3s;
+          border: 1px solid rgba(34, 211, 238, 0.1);
+          transition: all 0.3s ease;
         }
 
-        .room-card:hover {
+        .admin-room-card:hover {
           transform: translateY(-5px);
-          box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+          border-color: rgba(34, 211, 238, 0.3);
+          box-shadow: 0 10px 30px rgba(34, 211, 238, 0.15);
         }
 
-        .room-card.inactive {
+        .admin-room-card.inactive {
           opacity: 0.6;
         }
 
         .room-image {
-          position: relative;
           height: 180px;
-          overflow: hidden;
+          position: relative;
+          background: linear-gradient(135deg, #22D3EE, #A855F7);
         }
 
         .room-image img {
           width: 100%;
           height: 100%;
           object-fit: cover;
+        }
+
+        .placeholder-image {
+          width: 100%;
+          height: 100%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 4rem;
+          color: #0A0F1C;
         }
 
         .room-badges {
@@ -1276,40 +1256,43 @@ const AdminPanel = () => {
           gap: 0.5rem;
         }
 
-        .badge-type {
-          padding: 0.25rem 0.75rem;
+        .type-badge {
+          padding: 0.35rem 0.75rem;
           border-radius: 20px;
           font-size: 0.75rem;
           font-weight: 600;
         }
 
-        .badge-type.ac {
-          background: #dbeafe;
-          color: #1d4ed8;
+        .type-badge.ac {
+          background: rgba(34, 211, 238, 0.9);
+          color: #0A0F1C;
         }
 
-        .badge-type.non-ac {
-          background: #fef3c7;
-          color: #d97706;
+        .type-badge.non-ac {
+          background: rgba(251, 191, 36, 0.9);
+          color: #0A0F1C;
         }
 
-        .badge-inactive {
-          background: #ef4444;
+        .inactive-badge {
+          background: rgba(239, 68, 68, 0.9);
           color: white;
-          padding: 0.25rem 0.75rem;
+          padding: 0.35rem 0.75rem;
           border-radius: 20px;
           font-size: 0.75rem;
+          font-weight: 600;
         }
 
-        .room-price {
+        .price-badge {
           position: absolute;
           bottom: 10px;
           right: 10px;
-          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-          color: white;
+          background: rgba(10, 15, 28, 0.9);
+          color: #22D3EE;
           padding: 0.5rem 1rem;
           border-radius: 20px;
-          font-weight: 600;
+          font-weight: 700;
+          font-size: 0.9rem;
+          border: 1px solid rgba(34, 211, 238, 0.3);
         }
 
         .room-details {
@@ -1318,88 +1301,102 @@ const AdminPanel = () => {
 
         .room-details h4 {
           margin: 0 0 0.25rem 0;
-          color: #1a1a2e;
+          color: #F8FAFC;
+          font-size: 1.1rem;
         }
 
-        .room-number {
-          color: #6b7280;
-          font-size: 0.875rem;
+        .room-meta {
+          color: #64748B;
+          font-size: 0.85rem;
           margin-bottom: 0.75rem;
         }
 
-        .room-info {
+        .room-stats {
           display: flex;
           gap: 1rem;
           margin-bottom: 0.75rem;
-          font-size: 0.875rem;
-          color: #6b7280;
+          font-size: 0.85rem;
+          color: #94A3B8;
+        }
+
+        .room-stats span {
+          display: flex;
+          align-items: center;
+          gap: 0.35rem;
+        }
+
+        .room-stats svg {
+          color: #22D3EE;
         }
 
         .room-amenities {
           display: flex;
           flex-wrap: wrap;
-          gap: 0.5rem;
+          gap: 0.35rem;
           margin-bottom: 1rem;
         }
 
-        .amenity-tag {
-          background: #f3f4f6;
-          padding: 0.25rem 0.5rem;
-          border-radius: 4px;
-          font-size: 0.75rem;
-          color: #6b7280;
+        .amenity-chip {
+          background: rgba(34, 211, 238, 0.1);
+          color: #22D3EE;
+          padding: 0.25rem 0.6rem;
+          border-radius: 6px;
+          font-size: 0.7rem;
+          border: 1px solid rgba(34, 211, 238, 0.2);
         }
 
-        .amenity-tag.more {
-          background: #667eea;
-          color: white;
+        .amenity-chip.more {
+          background: linear-gradient(135deg, #22D3EE, #A855F7);
+          color: #0A0F1C;
+          border: none;
         }
 
         .room-actions {
           display: flex;
           gap: 0.5rem;
           padding-top: 0.75rem;
-          border-top: 1px solid #e5e7eb;
+          border-top: 1px solid rgba(34, 211, 238, 0.1);
         }
 
-        .btn-icon {
+        .action-btn {
           flex: 1;
-          padding: 0.5rem;
+          padding: 0.6rem;
           border: none;
-          border-radius: 6px;
+          border-radius: 8px;
           cursor: pointer;
-          transition: all 0.2s;
+          transition: all 0.3s ease;
           display: flex;
           align-items: center;
           justify-content: center;
+          font-size: 1rem;
         }
 
-        .btn-icon.view {
-          background: #dbeafe;
-          color: #1d4ed8;
+        .action-btn.view {
+          background: rgba(34, 211, 238, 0.15);
+          color: #22D3EE;
         }
 
-        .btn-icon.edit {
-          background: #fef3c7;
-          color: #d97706;
+        .action-btn.edit {
+          background: rgba(251, 191, 36, 0.15);
+          color: #FBBF24;
         }
 
-        .btn-icon.toggle {
-          background: #d1fae5;
-          color: #059669;
+        .action-btn.toggle {
+          background: rgba(16, 185, 129, 0.15);
+          color: #10B981;
         }
 
-        .btn-icon.delete {
-          background: #fee2e2;
-          color: #dc2626;
+        .action-btn.delete {
+          background: rgba(239, 68, 68, 0.15);
+          color: #EF4444;
         }
 
-        .btn-icon:hover {
+        .action-btn:hover {
           transform: scale(1.1);
         }
 
-        /* Tables */
-        .table-container {
+        /* Table Styles */
+        .table-wrapper {
           overflow-x: auto;
         }
 
@@ -1412,144 +1409,144 @@ const AdminPanel = () => {
         .admin-table th {
           text-align: left;
           padding: 1rem;
-          background: #f9fafb;
+          background: rgba(255, 255, 255, 0.03);
           font-weight: 600;
-          color: #1a1a2e;
-          border-bottom: 2px solid #e5e7eb;
+          color: #94A3B8;
+          font-size: 0.8rem;
+          text-transform: uppercase;
+          letter-spacing: 1px;
+          border-bottom: 1px solid rgba(34, 211, 238, 0.1);
         }
 
         .admin-table td {
           padding: 1rem;
-          border-bottom: 1px solid #e5e7eb;
+          border-bottom: 1px solid rgba(34, 211, 238, 0.05);
+          color: #94A3B8;
         }
 
-        .admin-table tr:hover {
-          background: #f9fafb;
+        .admin-table tbody tr:hover {
+          background: rgba(34, 211, 238, 0.03);
         }
 
-        .cell-user {
+        .user-cell {
           display: flex;
           flex-direction: column;
         }
 
-        .cell-user small {
-          color: #6b7280;
+        .user-cell strong {
+          color: #F8FAFC;
+        }
+
+        .user-cell small {
+          color: #64748B;
           font-size: 0.75rem;
         }
 
-        code {
-          background: #f3f4f6;
+        .admin-table code {
+          background: rgba(34, 211, 238, 0.1);
           padding: 0.25rem 0.5rem;
-          border-radius: 4px;
+          border-radius: 6px;
+          font-family: 'Orbitron', monospace;
           font-size: 0.8rem;
+          color: #22D3EE;
         }
 
-        .action-buttons {
+        .amount {
+          font-family: 'Orbitron', sans-serif;
+          font-weight: 700;
+          background: linear-gradient(135deg, #22D3EE, #A855F7);
+          -webkit-background-clip: text;
+          -webkit-text-fill-color: transparent;
+        }
+
+        .table-actions {
           display: flex;
           gap: 0.5rem;
+          flex-wrap: wrap;
         }
 
-        .btn-sm {
+        .btn-action {
+          display: flex;
+          align-items: center;
+          gap: 0.35rem;
           padding: 0.4rem 0.75rem;
           border: none;
-          border-radius: 6px;
+          border-radius: 8px;
           cursor: pointer;
           font-size: 0.8rem;
           font-weight: 500;
-          transition: all 0.2s;
+          transition: all 0.3s ease;
+          font-family: inherit;
         }
 
-        .btn-sm.success {
-          background: #d1fae5;
-          color: #059669;
+        .btn-action.success {
+          background: rgba(16, 185, 129, 0.15);
+          color: #10B981;
+          border: 1px solid rgba(16, 185, 129, 0.3);
         }
 
-        .btn-sm.danger {
-          background: #fee2e2;
-          color: #dc2626;
+        .btn-action.danger {
+          background: rgba(239, 68, 68, 0.15);
+          color: #EF4444;
+          border: 1px solid rgba(239, 68, 68, 0.3);
         }
 
-        .btn-sm.info {
-          background: #dbeafe;
-          color: #1d4ed8;
+        .btn-action.info {
+          background: rgba(34, 211, 238, 0.15);
+          color: #22D3EE;
+          border: 1px solid rgba(34, 211, 238, 0.3);
         }
 
-        .btn-sm.secondary {
-          background: #e5e7eb;
-          color: #4b5563;
+        .btn-action.secondary {
+          background: rgba(148, 163, 184, 0.15);
+          color: #94A3B8;
+          border: 1px solid rgba(148, 163, 184, 0.3);
         }
 
-        .btn-sm:hover {
+        .btn-action:hover {
           transform: scale(1.05);
         }
 
-        /* Badges */
-        .badge {
-          display: inline-flex;
-          align-items: center;
-          gap: 0.25rem;
-          padding: 0.25rem 0.75rem;
-          border-radius: 20px;
-          font-size: 0.75rem;
-          font-weight: 600;
-        }
-
-        .badge-success {
-          background: #d1fae5;
-          color: #059669;
-        }
-
-        .badge-warning {
-          background: #fef3c7;
-          color: #d97706;
-        }
-
-        .badge-danger {
-          background: #fee2e2;
-          color: #dc2626;
-        }
-
-        .badge-info {
-          background: #dbeafe;
-          color: #1d4ed8;
-        }
-
-        .badge-secondary {
-          background: #e5e7eb;
-          color: #4b5563;
-        }
-
-        .badge-primary {
-          background: #dbeafe;
-          color: #1d4ed8;
-        }
-
-        /* Modal */
+        /* Modal Styles */
         .modal-overlay {
           position: fixed;
           top: 0;
           left: 0;
           right: 0;
           bottom: 0;
-          background: rgba(0,0,0,0.6);
+          background: rgba(10, 15, 28, 0.9);
+          backdrop-filter: blur(8px);
           display: flex;
           align-items: center;
           justify-content: center;
-          z-index: 1000;
+          z-index: 2000;
           padding: 1rem;
         }
 
         .modal-content {
-          background: white;
-          border-radius: 12px;
+          background: #111827;
+          border-radius: 20px;
           width: 100%;
           max-width: 600px;
           max-height: 90vh;
           overflow-y: auto;
+          border: 1px solid rgba(34, 211, 238, 0.2);
+          animation: modalSlideIn 0.3s ease;
         }
 
         .view-modal {
           max-width: 700px;
+        }
+
+        @keyframes modalSlideIn {
+          from {
+            opacity: 0;
+            transform: translateY(20px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
         }
 
         .modal-header {
@@ -1557,26 +1554,32 @@ const AdminPanel = () => {
           justify-content: space-between;
           align-items: center;
           padding: 1.5rem;
-          border-bottom: 1px solid #e5e7eb;
+          border-bottom: 1px solid rgba(34, 211, 238, 0.15);
         }
 
         .modal-header h3 {
           margin: 0;
+          color: #F8FAFC;
+          font-size: 1.25rem;
         }
 
         .modal-close {
-          background: none;
-          border: none;
+          background: rgba(255, 255, 255, 0.05);
+          border: 1px solid rgba(34, 211, 238, 0.2);
+          border-radius: 10px;
+          padding: 0.5rem;
+          font-size: 1.25rem;
+          color: #64748B;
           cursor: pointer;
-          color: #6b7280;
-          padding: 0;
+          transition: all 0.3s ease;
         }
 
         .modal-close:hover {
-          color: #1a1a2e;
+          color: #22D3EE;
+          border-color: #22D3EE;
         }
 
-        /* Room Form */
+        /* Form Styles */
         .room-form {
           padding: 1.5rem;
         }
@@ -1587,72 +1590,17 @@ const AdminPanel = () => {
           gap: 1rem;
         }
 
-        .form-group {
-          margin-bottom: 1rem;
-        }
-
-        .form-group label {
-          display: block;
-          margin-bottom: 0.5rem;
-          font-weight: 500;
-          color: #1a1a2e;
-        }
-
-        .form-group input,
-        .form-group select,
-        .form-group textarea {
-          width: 100%;
-          padding: 0.75rem;
-          border: 1px solid #e5e7eb;
-          border-radius: 8px;
-          font-size: 1rem;
-          transition: border-color 0.2s;
-        }
-
-        .form-group input:focus,
-        .form-group select:focus,
-        .form-group textarea:focus {
-          outline: none;
-          border-color: #667eea;
-        }
-
         .form-actions {
           display: flex;
           gap: 1rem;
-          margin-top: 1rem;
+          margin-top: 1.5rem;
         }
 
-        .btn-cancel,
-        .btn-submit {
+        .form-actions .btn {
           flex: 1;
-          padding: 0.75rem;
-          border: none;
-          border-radius: 8px;
-          cursor: pointer;
-          font-weight: 600;
-          transition: all 0.2s;
         }
 
-        .btn-cancel {
-          background: #e5e7eb;
-          color: #4b5563;
-        }
-
-        .btn-submit {
-          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-          color: white;
-        }
-
-        .btn-submit:hover:not(:disabled) {
-          transform: translateY(-2px);
-        }
-
-        .btn-submit:disabled {
-          opacity: 0.7;
-          cursor: not-allowed;
-        }
-
-        /* View Modal */
+        /* View Modal Content */
         .view-content {
           padding: 1.5rem;
         }
@@ -1661,17 +1609,18 @@ const AdminPanel = () => {
           width: 100%;
           height: 250px;
           object-fit: cover;
-          border-radius: 8px;
+          border-radius: 12px;
           margin-bottom: 1.5rem;
+          border: 1px solid rgba(34, 211, 238, 0.2);
         }
 
         .view-details h2 {
           margin: 0 0 0.25rem 0;
-          color: #1a1a2e;
+          color: #F8FAFC;
         }
 
-        .view-room-number {
-          color: #6b7280;
+        .view-meta {
+          color: #64748B;
           margin-bottom: 1rem;
         }
 
@@ -1682,20 +1631,22 @@ const AdminPanel = () => {
           flex-wrap: wrap;
         }
 
-        .badge-sharing {
-          background: #f3f4f6;
-          color: #1a1a2e;
-          padding: 0.25rem 0.75rem;
+        .sharing-badge {
+          background: rgba(168, 85, 247, 0.15);
+          color: #A855F7;
+          padding: 0.35rem 0.75rem;
           border-radius: 20px;
-          font-size: 0.875rem;
+          font-size: 0.85rem;
+          border: 1px solid rgba(168, 85, 247, 0.3);
         }
 
-        .badge-price {
-          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-          color: white;
-          padding: 0.25rem 0.75rem;
+        .price-tag {
+          background: linear-gradient(135deg, #22D3EE, #A855F7);
+          color: #0A0F1C;
+          padding: 0.35rem 0.75rem;
           border-radius: 20px;
-          font-size: 0.875rem;
+          font-size: 0.85rem;
+          font-weight: 600;
         }
 
         .view-section {
@@ -1704,29 +1655,41 @@ const AdminPanel = () => {
 
         .view-section h4 {
           margin: 0 0 0.75rem 0;
-          color: #1a1a2e;
+          color: #F8FAFC;
+          font-size: 1rem;
+        }
+
+        .view-section p {
+          color: #94A3B8;
+          line-height: 1.6;
         }
 
         .beds-status {
-          display: grid;
-          grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+          display: flex;
+          flex-wrap: wrap;
           gap: 0.5rem;
         }
 
-        .bed-item {
+        .bed-chip {
           display: flex;
+          align-items: center;
           justify-content: space-between;
-          padding: 0.75rem;
+          gap: 0.5rem;
+          padding: 0.5rem 1rem;
           border-radius: 8px;
-          font-size: 0.875rem;
+          font-size: 0.85rem;
         }
 
-        .bed-item.available {
-          background: #d1fae5;
+        .bed-chip.available {
+          background: rgba(16, 185, 129, 0.15);
+          color: #10B981;
+          border: 1px solid rgba(16, 185, 129, 0.3);
         }
 
-        .bed-item.occupied {
-          background: #fee2e2;
+        .bed-chip.occupied {
+          background: rgba(239, 68, 68, 0.15);
+          color: #EF4444;
+          border: 1px solid rgba(239, 68, 68, 0.3);
         }
 
         .amenities-list {
@@ -1737,11 +1700,16 @@ const AdminPanel = () => {
 
         /* Responsive */
         @media (max-width: 768px) {
-          .header-content h1 {
-            font-size: 1.5rem;
+          .admin-panel {
+            padding: 1rem;
           }
 
-          .stats-grid {
+          .admin-header {
+            flex-direction: column;
+            align-items: flex-start;
+          }
+
+          .admin-stats-grid {
             grid-template-columns: repeat(2, 1fr);
           }
 
@@ -1753,7 +1721,11 @@ const AdminPanel = () => {
             grid-template-columns: 1fr;
           }
 
-          .rooms-grid {
+          .admin-rooms-grid {
+            grid-template-columns: 1fr;
+          }
+
+          .overview-grid {
             grid-template-columns: 1fr;
           }
         }

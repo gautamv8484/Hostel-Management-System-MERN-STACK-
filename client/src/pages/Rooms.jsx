@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import RoomCard from '../components/RoomCard';
 import api from '../services/api';
-import { FiFilter, FiRefreshCw } from 'react-icons/fi';
+import { FiFilter, FiRefreshCw, FiSearch, FiGrid } from 'react-icons/fi';
+import { IoBedOutline } from 'react-icons/io5';
 
 const Rooms = () => {
   const [searchParams] = useSearchParams();
@@ -63,20 +64,24 @@ const Rooms = () => {
   };
 
   return (
-    <div className="rooms-page" style={{ padding: '2rem 0', minHeight: '80vh' }}>
+    <div className="rooms-page">
       <div className="section-container">
         <div className="section-header">
-          <h2>Our Rooms</h2>
-          <p>Find your perfect accommodation from our wide range of options</p>
+          <div className="section-tag">
+            <IoBedOutline /> Browse Rooms
+          </div>
+          <h2>Find Your <span className="gradient-text">Perfect Space</span></h2>
+          <p>Explore our wide range of rooms designed for your comfort</p>
         </div>
 
         <div className="filters-section">
           <div className="filters-grid">
             <div className="filter-group">
-              <label><FiFilter /> Sharing Type:</label>
+              <label><FiFilter /> Sharing Type</label>
               <select
                 value={filters.sharingType}
                 onChange={(e) => handleFilterChange('sharingType', e.target.value)}
+                className="form-control"
               >
                 <option value="">All Types</option>
                 <option value="2">2 Sharing</option>
@@ -87,10 +92,11 @@ const Rooms = () => {
             </div>
 
             <div className="filter-group">
-              <label>Room Type:</label>
+              <label><FiGrid /> Room Type</label>
               <select
                 value={filters.roomType}
                 onChange={(e) => handleFilterChange('roomType', e.target.value)}
+                className="form-control"
               >
                 <option value="">All</option>
                 <option value="AC">AC</option>
@@ -99,17 +105,18 @@ const Rooms = () => {
             </div>
 
             <div className="filter-group">
-              <label>Availability:</label>
+              <label><FiSearch /> Availability</label>
               <select
                 value={filters.available}
                 onChange={(e) => handleFilterChange('available', e.target.value)}
+                className="form-control"
               >
                 <option value="true">Available Only</option>
                 <option value="">Show All</option>
               </select>
             </div>
 
-            <button className="btn btn-secondary btn-sm" onClick={resetFilters}>
+            <button className="btn btn-secondary" onClick={resetFilters}>
               <FiRefreshCw /> Reset
             </button>
           </div>
@@ -122,6 +129,7 @@ const Rooms = () => {
           </div>
         ) : error ? (
           <div className="empty-state">
+            <FiFilter />
             <h3>{error}</h3>
             <button className="btn btn-primary mt-2" onClick={fetchRooms}>
               <FiRefreshCw /> Try Again
@@ -129,7 +137,7 @@ const Rooms = () => {
           </div>
         ) : rooms.length === 0 ? (
           <div className="empty-state">
-            <FiFilter style={{ fontSize: '4rem', color: '#cbd5e1' }} />
+            <IoBedOutline />
             <h3>No rooms found</h3>
             <p>Try adjusting your filters to find available rooms</p>
             <button className="btn btn-primary mt-2" onClick={resetFilters}>
@@ -138,9 +146,9 @@ const Rooms = () => {
           </div>
         ) : (
           <>
-            <p className="text-muted mb-2">
-              Found {rooms.length} room{rooms.length !== 1 ? 's' : ''}
-            </p>
+            <div className="results-info">
+              <p>Found <span className="gradient-text">{rooms.length}</span> room{rooms.length !== 1 ? 's' : ''}</p>
+            </div>
             <div className="rooms-grid">
               {rooms.map(room => (
                 <RoomCard key={room._id} room={room} />
@@ -149,6 +157,37 @@ const Rooms = () => {
           </>
         )}
       </div>
+
+      <style jsx>{`
+        .section-tag {
+          display: inline-flex;
+          align-items: center;
+          gap: 0.5rem;
+          padding: 0.5rem 1rem;
+          background: rgba(168, 85, 247, 0.1);
+          border: 1px solid #A855F7;
+          border-radius: 50px;
+          font-size: 0.85rem;
+          color: #A855F7;
+          margin-bottom: 1rem;
+          text-transform: uppercase;
+          letter-spacing: 2px;
+        }
+
+        .results-info {
+          margin-bottom: 1.5rem;
+        }
+
+        .results-info p {
+          color: #94A3B8;
+          font-size: 1rem;
+        }
+
+        .results-info .gradient-text {
+          font-weight: 700;
+          font-size: 1.25rem;
+        }
+      `}</style>
     </div>
   );
 };

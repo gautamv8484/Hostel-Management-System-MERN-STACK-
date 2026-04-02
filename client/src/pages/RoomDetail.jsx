@@ -1,4 +1,3 @@
-// src/pages/RoomDetail.jsx
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
@@ -11,8 +10,10 @@ import {
   FiCalendar, 
   FiCheck,
   FiArrowLeft,
-  FiHome
+  FiHome,
+  FiZap
 } from 'react-icons/fi';
+import { IoBedOutline } from 'react-icons/io5';
 
 const RoomDetail = () => {
   const { id } = useParams();
@@ -36,7 +37,6 @@ const RoomDetail = () => {
   const fetchRoomDetails = async () => {
     try {
       const response = await api.get(`/rooms/${id}`);
-      console.log('Room Details Response:', response.data);
       
       if (response.data.success) {
         setRoom(response.data.room);
@@ -54,18 +54,11 @@ const RoomDetail = () => {
     }
   };
 
-  // ✅ Handle multiple possible price field names
   const getPrice = () => {
     if (!room) return 0;
-    return room.pricePerBed || 
-           room.pricePerMonth || 
-           room.pricePerPerson || 
-           room.price || 
-           room.rent ||
-           0;
+    return room.pricePerBed || room.pricePerMonth || room.pricePerPerson || room.price || room.rent || 0;
   };
 
-  // ✅ Get available beds
   const getAvailableBeds = () => {
     if (!room) return [];
     if (room.beds && Array.isArray(room.beds)) {
@@ -74,7 +67,6 @@ const RoomDetail = () => {
     return [];
   };
 
-  // ✅ Get total beds count
   const getTotalBeds = () => {
     if (!room) return 0;
     if (room.beds && Array.isArray(room.beds)) {
@@ -83,7 +75,6 @@ const RoomDetail = () => {
     return room.totalBeds || room.capacity || room.sharingType || 0;
   };
 
-  // ✅ Get available beds count
   const getAvailableBedsCount = () => {
     if (!room) return 0;
     if (room.beds && Array.isArray(room.beds)) {
@@ -131,12 +122,10 @@ const RoomDetail = () => {
         toast.error(response.data.message || 'Booking failed');
       }
     } catch (error) {
-      console.error('Booking error:', error);
       toast.error(error.response?.data?.message || 'Booking failed');
     }
   };
 
-  // Calculate total price
   const calculateTotal = () => {
     if (!bookingData.checkInDate || !bookingData.checkOutDate) return 0;
     
@@ -150,7 +139,7 @@ const RoomDetail = () => {
 
   if (loading) {
     return (
-      <div className="loading-container">
+      <div className="loading-container" style={{ minHeight: '60vh' }}>
         <div className="loading-spinner"></div>
         <p>Loading room details...</p>
       </div>
@@ -159,9 +148,10 @@ const RoomDetail = () => {
 
   if (!room) {
     return (
-      <div className="error-container">
+      <div className="error-container" style={{ minHeight: '60vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+        <IoBedOutline style={{ fontSize: '4rem', color: '#64748B', marginBottom: '1rem' }} />
         <h2>Room not found</h2>
-        <button onClick={() => navigate('/rooms')} className="btn btn-primary">
+        <button onClick={() => navigate('/rooms')} className="btn btn-primary mt-2">
           Back to Rooms
         </button>
       </div>
@@ -173,28 +163,12 @@ const RoomDetail = () => {
   const availableBedsCount = getAvailableBedsCount();
   const totalBeds = getTotalBeds();
 
-  // Debug log - remove after fixing
-  console.log('Room Detail Data:', {
-    room,
-    price,
-    availableBedsCount,
-    totalBeds,
-    allPriceFields: {
-      pricePerBed: room.pricePerBed,
-      pricePerMonth: room.pricePerMonth,
-      pricePerPerson: room.pricePerPerson,
-      price: room.price,
-      rent: room.rent
-    }
-  });
-
   return (
     <div className="room-details-page">
       <div className="section-container">
-        {/* Back Button */}
         <button 
           onClick={() => navigate('/rooms')} 
-          className="btn btn-secondary mb-2"
+          className="btn btn-glass mb-2"
         >
           <FiArrowLeft /> Back to Rooms
         </button>
@@ -202,11 +176,19 @@ const RoomDetail = () => {
         <div className="room-details-grid">
           {/* Room Images */}
           <div className="room-images">
-            <img 
-              src={room.images?.[0] || 'https://via.placeholder.com/600x400?text=Room'} 
-              alt={room.name || `Room ${room.roomNumber}`}
-              className="main-image"
-            />
+            <div className="main-image-container">
+              {room.images?.[0] ? (
+                <img 
+                  src={room.images[0]} 
+                  alt={room.name || `Room ${room.roomNumber}`}
+                  className="main-image"
+                />
+              ) : (
+                <div className="main-image placeholder">
+                  <IoBedOutline />
+                </div>
+              )}
+            </div>
             {room.images?.length > 1 && (
               <div className="thumbnail-grid">
                 {room.images.slice(1, 4).map((img, index) => (
@@ -241,7 +223,7 @@ const RoomDetail = () => {
               </div>
             </div>
 
-            {/* ✅ PRICE DISPLAY */}
+            {/* Price */}
             <div className="room-price-box">
               {price > 0 ? (
                 <>
@@ -253,7 +235,7 @@ const RoomDetail = () => {
               )}
             </div>
 
-            {/* ✅ AVAILABILITY STATUS */}
+            {/* Availability */}
             <div className="availability-status">
               {availableBedsCount > 0 ? (
                 <span className="available">
@@ -284,10 +266,10 @@ const RoomDetail = () => {
               </div>
             )}
 
-            {/* Available Beds List */}
+            {/* Available Beds */}
             {availableBeds.length > 0 && (
               <div className="available-beds-section">
-                <h3>Available Beds</h3>
+                <h3>Select Your Bed</h3>
                 <div className="beds-grid">
                   {availableBeds.map((bed) => (
                     <div 
@@ -311,14 +293,13 @@ const RoomDetail = () => {
                     onClick={handleBookNowClick}
                     className="btn btn-primary btn-lg btn-block"
                   >
-                    <FiCalendar /> 
+                    <FiZap /> 
                     {user ? 'Book Now' : 'Login to Book'}
                   </button>
                 ) : (
                   <form onSubmit={handleBookingSubmit} className="booking-form">
                     <h3>Complete Your Booking</h3>
                     
-                    {/* Selected Bed */}
                     {selectedBed && (
                       <div className="selected-bed-info">
                         <p>Selected: Bed {availableBeds.find(b => b._id === selectedBed)?.bedNumber}</p>
@@ -326,9 +307,10 @@ const RoomDetail = () => {
                     )}
                     
                     <div className="form-group">
-                      <label>Check-in Date</label>
+                      <label><FiCalendar /> Check-in Date</label>
                       <input
                         type="date"
+                        className="form-control"
                         value={bookingData.checkInDate}
                         onChange={(e) => setBookingData({
                           ...bookingData, 
@@ -340,9 +322,10 @@ const RoomDetail = () => {
                     </div>
                     
                     <div className="form-group">
-                      <label>Check-out Date</label>
+                      <label><FiCalendar /> Check-out Date</label>
                       <input
                         type="date"
+                        className="form-control"
                         value={bookingData.checkOutDate}
                         onChange={(e) => setBookingData({
                           ...bookingData, 
@@ -356,6 +339,7 @@ const RoomDetail = () => {
                     <div className="form-group">
                       <label>Special Requests (Optional)</label>
                       <textarea
+                        className="form-control"
                         value={bookingData.specialRequests}
                         onChange={(e) => setBookingData({
                           ...bookingData, 
@@ -366,14 +350,13 @@ const RoomDetail = () => {
                       />
                     </div>
 
-                    {/* Booking Summary */}
                     <div className="booking-summary">
                       <div className="summary-row">
-                        <span>Price per month:</span>
+                        <span>Price per month</span>
                         <span>₹{price.toLocaleString()}</span>
                       </div>
                       <div className="summary-row total">
-                        <span><strong>Total Amount:</strong></span>
+                        <span><strong>Total Amount</strong></span>
                         <span><strong>₹{calculateTotal().toLocaleString()}</strong></span>
                       </div>
                     </div>
@@ -387,7 +370,7 @@ const RoomDetail = () => {
                         Cancel
                       </button>
                       <button type="submit" className="btn btn-primary">
-                        Confirm Booking
+                        <FiZap /> Confirm Booking
                       </button>
                     </div>
                   </form>
@@ -395,7 +378,6 @@ const RoomDetail = () => {
               </div>
             )}
 
-            {/* Login prompt for non-logged in users */}
             {!user && availableBedsCount > 0 && (
               <div className="login-prompt">
                 <p>
@@ -415,6 +397,31 @@ const RoomDetail = () => {
           </div>
         </div>
       </div>
+
+      <style jsx>{`
+        .main-image-container {
+          position: relative;
+          overflow: hidden;
+          border-radius: 20px;
+          border: 1px solid rgba(34, 211, 238, 0.2);
+        }
+
+        .main-image {
+          width: 100%;
+          height: 400px;
+          object-fit: cover;
+          display: block;
+        }
+
+        .main-image.placeholder {
+          background: linear-gradient(135deg, #22D3EE, #A855F7);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 5rem;
+          color: #0A0F1C;
+        }
+      `}</style>
     </div>
   );
 };

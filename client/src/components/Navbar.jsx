@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { 
@@ -9,16 +9,27 @@ import {
   FiMenu, 
   FiX,
   FiSettings,
-  FiCalendar 
+  FiCalendar,
+  FiZap
 } from 'react-icons/fi';
 
 const Navbar = () => {
   const { user, logout, isAuthenticated } = useAuth();
   const navigate = useNavigate();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
 
   // Check if user is admin
   const isAdmin = user?.role === 'admin';
+
+  // Handle scroll effect
+  useEffect(() => {
+    const handleScroll = () => {
+      setScrolled(window.scrollY > 50);
+    };
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   const handleLogout = () => {
     logout();
@@ -31,10 +42,10 @@ const Navbar = () => {
   };
 
   return (
-    <nav className="navbar">
+    <nav className={`navbar ${scrolled ? 'scrolled' : ''}`}>
       <div className="navbar-container">
         <Link to="/" className="navbar-logo" onClick={closeMobileMenu}>
-          <FiHome />
+          <FiZap className="logo-icon" />
           <span>RUDRAKSHA</span>
         </Link>
 
@@ -55,7 +66,7 @@ const Navbar = () => {
               <div className="navbar-avatar">
                 {user.name ? user.name.charAt(0).toUpperCase() : 'U'}
               </div>
-              <span>{user.name || 'User'}</span>
+              <span className="user-name">{user.name || 'User'}</span>
               <div className="navbar-dropdown">
                 <Link to="/my-bookings" onClick={closeMobileMenu}>
                   <FiCalendar /> My Bookings
@@ -76,7 +87,7 @@ const Navbar = () => {
                 Login
               </Link>
               <Link to="/register" className="btn btn-primary" onClick={closeMobileMenu}>
-                Register
+                <FiZap /> Register
               </Link>
             </>
           )}
@@ -89,6 +100,31 @@ const Navbar = () => {
           {mobileMenuOpen ? <FiX /> : <FiMenu />}
         </button>
       </div>
+
+      <style jsx>{`
+        .logo-icon {
+          font-size: 1.75rem;
+          color: #22D3EE;
+          filter: drop-shadow(0 0 10px rgba(34, 211, 238, 0.5));
+          animation: logoGlow 3s ease-in-out infinite;
+        }
+
+        @keyframes logoGlow {
+          0%, 100% { filter: drop-shadow(0 0 10px rgba(34, 211, 238, 0.5)); }
+          50% { filter: drop-shadow(0 0 20px rgba(168, 85, 247, 0.6)); }
+        }
+
+        .user-name {
+          color: #F8FAFC;
+          font-weight: 500;
+        }
+
+        @media (max-width: 768px) {
+          .user-name {
+            display: none;
+          }
+        }
+      `}</style>
     </nav>
   );
 };

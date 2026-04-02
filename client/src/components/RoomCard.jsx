@@ -1,7 +1,8 @@
 import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { FiUsers, FiWind, FiMapPin } from 'react-icons/fi';
+import { FiUsers, FiWind, FiMapPin, FiCheck, FiZap } from 'react-icons/fi';
+import { IoBedOutline } from 'react-icons/io5';
 import toast from 'react-hot-toast';
 
 const RoomCard = ({ room }) => {
@@ -33,11 +34,19 @@ const RoomCard = ({ room }) => {
   return (
     <div className="room-card">
       <div className="room-card-image">
-        <img 
-          src={room.images && room.images[0] ? room.images[0] : 'https://images.unsplash.com/photo-1522771739844-6a9f6d5f14af?w=500'} 
-          alt={room.name || `Room ${room.roomNumber}`} 
-        />
-        {room.roomType === 'AC' && <span className="room-badge">AC</span>}
+        {room.images && room.images[0] ? (
+          <img 
+            src={room.images[0]} 
+            alt={room.name || `Room ${room.roomNumber}`} 
+          />
+        ) : (
+          <IoBedOutline />
+        )}
+        {room.roomType === 'AC' && (
+          <span className="room-badge">
+            <FiWind /> AC
+          </span>
+        )}
       </div>
       
       <div className="room-card-content">
@@ -56,9 +65,11 @@ const RoomCard = ({ room }) => {
         
         <div className="room-card-availability">
           <span className={availableBeds > 0 ? 'available' : 'full'}>
-            {availableBeds > 0 
-              ? `${availableBeds} of ${totalBeds} beds available` 
-              : 'No beds available'}
+            {availableBeds > 0 ? (
+              <><FiCheck /> {availableBeds} of {totalBeds} beds available</>
+            ) : (
+              'No beds available'
+            )}
           </span>
         </div>
         
@@ -69,7 +80,7 @@ const RoomCard = ({ room }) => {
           
           {availableBeds > 0 && (
             <button onClick={handleBookClick} className="btn btn-primary">
-              {user ? 'Book Now' : 'Login to Book'}
+              <FiZap /> {user ? 'Book Now' : 'Login to Book'}
             </button>
           )}
         </div>

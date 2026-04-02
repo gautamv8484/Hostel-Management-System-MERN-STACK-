@@ -1,4 +1,3 @@
-// src/context/AuthContext.js
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import api from '../services/api';
 
@@ -29,7 +28,6 @@ export const AuthProvider = ({ children }) => {
         return;
       }
 
-      // ✅ Updated to match backend response
       const response = await api.get('/auth/profile');
       
       if (response.data.success && response.data.user) {
@@ -44,16 +42,10 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  // ✅ UPDATED LOGIN FUNCTION
   const login = async (email, password) => {
     try {
-      console.log('Attempting login...', email);
-      
       const response = await api.post('/auth/login', { email, password });
       
-      console.log('Login response:', response.data);
-      
-      // ✅ Check for success field from backend
       if (response.data.success && response.data.token) {
         localStorage.setItem('token', response.data.token);
         setUser(response.data.user);
@@ -65,34 +57,22 @@ export const AuthProvider = ({ children }) => {
         };
       }
     } catch (error) {
-      console.error('Login error:', error);
-      
       let message = 'Login failed. Please try again.';
       
       if (error.response) {
-        // ✅ Backend responded with error
         message = error.response.data?.message || `Error: ${error.response.status}`;
       } else if (error.request) {
-        // ✅ No response - server down
-        message = 'Cannot connect to server. Please check if backend is running on port 5000.';
-      } else {
-        message = error.message;
+        message = 'Cannot connect to server. Please check your connection.';
       }
       
       return { success: false, message };
     }
   };
 
-  // ✅ UPDATED REGISTER FUNCTION
   const register = async (userData) => {
     try {
-      console.log('Attempting registration...', userData.email);
-      
       const response = await api.post('/auth/register', userData);
       
-      console.log('Register response:', response.data);
-      
-      // ✅ Check for success field from backend
       if (response.data.success && response.data.token) {
         localStorage.setItem('token', response.data.token);
         setUser(response.data.user);
@@ -104,16 +84,12 @@ export const AuthProvider = ({ children }) => {
         };
       }
     } catch (error) {
-      console.error('Register error:', error);
-      
       let message = 'Registration failed. Please try again.';
       
       if (error.response) {
         message = error.response.data?.message || `Error: ${error.response.status}`;
       } else if (error.request) {
-        message = 'Cannot connect to server. Please check if backend is running on port 5000.';
-      } else {
-        message = error.message;
+        message = 'Cannot connect to server. Please check your connection.';
       }
       
       return { success: false, message };

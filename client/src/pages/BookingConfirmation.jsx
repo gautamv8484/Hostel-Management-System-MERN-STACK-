@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { FiCheckCircle, FiCalendar, FiHome, FiUser, FiDollarSign, FiArrowLeft } from 'react-icons/fi';
+import { FiCheckCircle, FiCalendar, FiHome, FiUser, FiDollarSign, FiArrowLeft, FiZap } from 'react-icons/fi';
 import { format } from 'date-fns';
 import api from '../services/api';
 import toast from 'react-hot-toast';
@@ -22,7 +22,6 @@ const BookingConfirmation = () => {
         setBooking(response.data.booking);
       }
     } catch (error) {
-      console.error('Fetch booking error:', error);
       toast.error('Failed to load booking details');
       navigate('/my-bookings');
     } finally {
@@ -46,18 +45,22 @@ const BookingConfirmation = () => {
 
   if (loading) {
     return (
-      <div className="loading-container">
-        <div className="loading-spinner"></div>
-        <p>Loading booking details...</p>
+      <div className="booking-confirmation-page">
+        <div className="loading-container">
+          <div className="loading-spinner"></div>
+          <p>Loading booking details...</p>
+        </div>
       </div>
     );
   }
 
   if (!booking) {
     return (
-      <div className="error-container">
-        <h2>Booking not found</h2>
-        <Link to="/my-bookings">Go to My Bookings</Link>
+      <div className="booking-confirmation-page">
+        <div className="error-container">
+          <h2>Booking not found</h2>
+          <Link to="/my-bookings" className="btn btn-primary">Go to My Bookings</Link>
+        </div>
       </div>
     );
   }
@@ -69,7 +72,7 @@ const BookingConfirmation = () => {
         {/* Success Header */}
         <div className="success-header">
           <div className="success-icon">
-            <FiCheckCircle size={64} />
+            <FiCheckCircle />
           </div>
           <h1>Booking Confirmed!</h1>
           <p>Your booking has been successfully created</p>
@@ -86,8 +89,8 @@ const BookingConfirmation = () => {
 
           <div className="booking-info">
             {/* Booking ID */}
-            <div className="info-row">
-              <span className="label">Booking ID:</span>
+            <div className="info-row highlight">
+              <span className="label">Booking ID</span>
               <span className="value">
                 <code>#{booking._id?.slice(-8).toUpperCase()}</code>
               </span>
@@ -96,107 +99,74 @@ const BookingConfirmation = () => {
             {/* Room Details */}
             <div className="info-section">
               <h3><FiHome /> Room Information</h3>
-              <div className="info-row">
-                <span className="label">Room Name:</span>
-                <span className="value">{booking.room?.name}</span>
-              </div>
-              <div className="info-row">
-                <span className="label">Room Number:</span>
-                <span className="value">{booking.room?.roomNumber}</span>
-              </div>
-              <div className="info-row">
-                <span className="label">Floor:</span>
-                <span className="value">Floor {booking.room?.floor}</span>
-              </div>
-              <div className="info-row">
-                <span className="label">Room Type:</span>
-                <span className="value">{booking.room?.roomType}</span>
-              </div>
-              <div className="info-row">
-                <span className="label">Bed Number:</span>
-                <span className="value">Bed {booking.bed?.bedNumber || 'N/A'}</span>
+              <div className="info-grid">
+                <div className="info-item">
+                  <span className="label">Room Name</span>
+                  <span className="value">{booking.room?.name}</span>
+                </div>
+                <div className="info-item">
+                  <span className="label">Room Number</span>
+                  <span className="value">{booking.room?.roomNumber}</span>
+                </div>
+                <div className="info-item">
+                  <span className="label">Floor</span>
+                  <span className="value">Floor {booking.room?.floor}</span>
+                </div>
+                <div className="info-item">
+                  <span className="label">Bed Number</span>
+                  <span className="value">Bed {booking.bed?.bedNumber || 'N/A'}</span>
+                </div>
               </div>
             </div>
 
             {/* Stay Details */}
             <div className="info-section">
               <h3><FiCalendar /> Stay Details</h3>
-              <div className="info-row">
-                <span className="label">Check-in Date:</span>
-                <span className="value">
-                  {booking.checkInDate 
-                    ? format(new Date(booking.checkInDate), 'MMMM dd, yyyy')
-                    : 'N/A'}
-                </span>
-              </div>
-              <div className="info-row">
-                <span className="label">Check-out Date:</span>
-                <span className="value">
-                  {booking.checkOutDate 
-                    ? format(new Date(booking.checkOutDate), 'MMMM dd, yyyy')
-                    : 'N/A'}
-                </span>
-              </div>
-              <div className="info-row">
-                <span className="label">Duration:</span>
-                <span className="value">
-                  {booking.checkInDate && booking.checkOutDate
-                    ? `${Math.ceil((new Date(booking.checkOutDate) - new Date(booking.checkInDate)) / (1000 * 60 * 60 * 24))} days`
-                    : 'N/A'}
-                </span>
-              </div>
-            </div>
-
-            {/* Guest Details */}
-            <div className="info-section">
-              <h3><FiUser /> Guest Information</h3>
-              <div className="info-row">
-                <span className="label">Name:</span>
-                <span className="value">{booking.user?.name}</span>
-              </div>
-              <div className="info-row">
-                <span className="label">Email:</span>
-                <span className="value">{booking.user?.email}</span>
-              </div>
-              {booking.user?.phone && (
-                <div className="info-row">
-                  <span className="label">Phone:</span>
-                  <span className="value">{booking.user.phone}</span>
+              <div className="info-grid">
+                <div className="info-item">
+                  <span className="label">Check-in</span>
+                  <span className="value">
+                    {booking.checkInDate 
+                      ? format(new Date(booking.checkInDate), 'MMMM dd, yyyy')
+                      : 'N/A'}
+                  </span>
                 </div>
-              )}
+                <div className="info-item">
+                  <span className="label">Check-out</span>
+                  <span className="value">
+                    {booking.checkOutDate 
+                      ? format(new Date(booking.checkOutDate), 'MMMM dd, yyyy')
+                      : 'N/A'}
+                  </span>
+                </div>
+              </div>
             </div>
 
             {/* Payment Details */}
             <div className="info-section">
               <h3><FiDollarSign /> Payment Information</h3>
-              <div className="info-row">
-                <span className="label">Total Amount:</span>
-                <span className="value total-amount">₹{booking.totalAmount?.toLocaleString()}</span>
-              </div>
-              <div className="info-row">
-                <span className="label">Payment Status:</span>
-                <span className={`payment-badge ${booking.paymentStatus}`}>
-                  {booking.paymentStatus}
-                </span>
+              <div className="info-grid">
+                <div className="info-item">
+                  <span className="label">Total Amount</span>
+                  <span className="value amount">₹{booking.totalAmount?.toLocaleString()}</span>
+                </div>
+                <div className="info-item">
+                  <span className="label">Payment Status</span>
+                  <span className={`status-badge ${booking.paymentStatus}`}>
+                    {booking.paymentStatus}
+                  </span>
+                </div>
               </div>
             </div>
-
-            {/* Special Requests */}
-            {booking.specialRequests && (
-              <div className="info-section">
-                <h3>Special Requests</h3>
-                <p className="special-requests">{booking.specialRequests}</p>
-              </div>
-            )}
 
             {/* Amenities */}
             {booking.room?.amenities && booking.room.amenities.length > 0 && (
               <div className="info-section">
-                <h3>Room Amenities</h3>
+                <h3><FiZap /> Room Amenities</h3>
                 <div className="amenities-list">
                   {booking.room.amenities.map((amenity, index) => (
                     <span key={index} className="amenity-tag">
-                      ✓ {amenity}
+                      <FiCheckCircle /> {amenity}
                     </span>
                   ))}
                 </div>
@@ -219,7 +189,7 @@ const BookingConfirmation = () => {
 
         {/* Important Information */}
         <div className="info-box">
-          <h3>Important Information</h3>
+          <h3><FiZap /> Important Information</h3>
           <ul>
             <li>Please arrive during check-in hours (2:00 PM - 10:00 PM)</li>
             <li>Carry a valid government-issued ID for verification</li>
@@ -232,8 +202,21 @@ const BookingConfirmation = () => {
       <style jsx>{`
         .booking-confirmation-page {
           min-height: 100vh;
-          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
           padding: 2rem 1rem;
+          position: relative;
+        }
+
+        .booking-confirmation-page::before {
+          content: '';
+          position: fixed;
+          top: 0;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          background: 
+            radial-gradient(circle at 20% 30%, rgba(34, 211, 238, 0.1) 0%, transparent 50%),
+            radial-gradient(circle at 80% 70%, rgba(168, 85, 247, 0.1) 0%, transparent 50%);
+          z-index: -1;
         }
 
         .confirmation-container {
@@ -241,60 +224,48 @@ const BookingConfirmation = () => {
           margin: 0 auto;
         }
 
-        .loading-container,
-        .error-container {
-          text-align: center;
-          padding: 4rem 2rem;
-          background: white;
-          border-radius: 16px;
-          margin-top: 2rem;
-        }
-
-        .loading-spinner {
-          width: 50px;
-          height: 50px;
-          border: 4px solid #e5e7eb;
-          border-top-color: #667eea;
-          border-radius: 50%;
-          animation: spin 1s linear infinite;
-          margin: 0 auto 1rem;
-        }
-
-        @keyframes spin {
-          to { transform: rotate(360deg); }
-        }
-
         .success-header {
           text-align: center;
-          color: white;
           margin-bottom: 2rem;
         }
 
         .success-icon {
           width: 100px;
           height: 100px;
-          background: rgba(255,255,255,0.2);
+          background: linear-gradient(135deg, #10B981, #34D399);
           border-radius: 50%;
           display: flex;
           align-items: center;
           justify-content: center;
-          margin: 0 auto 1rem;
+          margin: 0 auto 1.5rem;
+          font-size: 3rem;
+          color: #0A0F1C;
+          box-shadow: 0 0 50px rgba(16, 185, 129, 0.5);
+          animation: successPulse 2s ease-in-out infinite;
+        }
+
+        @keyframes successPulse {
+          0%, 100% { box-shadow: 0 0 30px rgba(16, 185, 129, 0.5); }
+          50% { box-shadow: 0 0 60px rgba(16, 185, 129, 0.7); }
         }
 
         .success-header h1 {
+          font-family: 'Orbitron', sans-serif;
           font-size: 2rem;
-          margin: 1rem 0 0.5rem;
+          color: #F8FAFC;
+          margin-bottom: 0.5rem;
         }
 
         .success-header p {
-          opacity: 0.9;
+          color: #94A3B8;
         }
 
         .booking-card {
-          background: white;
-          border-radius: 16px;
+          background: rgba(17, 24, 39, 0.85);
+          border-radius: 24px;
           padding: 2rem;
-          box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+          border: 1px solid rgba(34, 211, 238, 0.2);
+          backdrop-filter: blur(20px);
           margin-bottom: 1.5rem;
         }
 
@@ -304,35 +275,12 @@ const BookingConfirmation = () => {
           align-items: center;
           margin-bottom: 2rem;
           padding-bottom: 1rem;
-          border-bottom: 2px solid #e5e7eb;
+          border-bottom: 1px solid rgba(34, 211, 238, 0.15);
         }
 
         .booking-header h2 {
           margin: 0;
-          color: #1a1a2e;
-        }
-
-        .status-badge {
-          padding: 0.5rem 1rem;
-          border-radius: 20px;
-          font-weight: 600;
-          font-size: 0.875rem;
-          text-transform: capitalize;
-        }
-
-        .status-badge.pending {
-          background: #fff3cd;
-          color: #856404;
-        }
-
-        .status-badge.confirmed {
-          background: #d4edda;
-          color: #155724;
-        }
-
-        .status-badge.cancelled {
-          background: #f8d7da;
-          color: #721c24;
+          color: #F8FAFC;
         }
 
         .booking-info {
@@ -341,78 +289,76 @@ const BookingConfirmation = () => {
           gap: 1.5rem;
         }
 
-        .info-section {
+        .info-row {
+          display: flex;
+          justify-content: space-between;
           padding: 1rem;
-          background: #f9fafb;
-          border-radius: 8px;
+          background: rgba(255, 255, 255, 0.03);
+          border-radius: 12px;
+          border: 1px solid rgba(34, 211, 238, 0.1);
+        }
+
+        .info-row.highlight {
+          border-color: #22D3EE;
+        }
+
+        .info-section {
+          padding: 1.5rem;
+          background: rgba(255, 255, 255, 0.02);
+          border-radius: 16px;
+          border: 1px solid rgba(34, 211, 238, 0.1);
         }
 
         .info-section h3 {
           display: flex;
           align-items: center;
           gap: 0.5rem;
-          margin: 0 0 1rem 0;
-          color: #1a1a2e;
+          margin-bottom: 1rem;
+          color: #F8FAFC;
           font-size: 1.1rem;
         }
 
-        .info-row {
-          display: flex;
-          justify-content: space-between;
-          padding: 0.75rem 0;
-          border-bottom: 1px solid #e5e7eb;
+        .info-section h3 svg {
+          color: #22D3EE;
         }
 
-        .info-row:last-child {
-          border-bottom: none;
+        .info-grid {
+          display: grid;
+          grid-template-columns: repeat(2, 1fr);
+          gap: 1rem;
+        }
+
+        .info-item {
+          display: flex;
+          flex-direction: column;
+          gap: 0.25rem;
         }
 
         .label {
-          color: #6b7280;
-          font-weight: 500;
+          color: #64748B;
+          font-size: 0.85rem;
         }
 
         .value {
-          color: #1a1a2e;
+          color: #F8FAFC;
           font-weight: 600;
-          text-align: right;
         }
 
-        .total-amount {
-          color: #667eea;
+        .value.amount {
+          font-family: 'Orbitron', sans-serif;
           font-size: 1.25rem;
+          background: linear-gradient(135deg, #22D3EE, #A855F7);
+          -webkit-background-clip: text;
+          -webkit-text-fill-color: transparent;
         }
 
         code {
-          background: #e5e7eb;
-          padding: 0.25rem 0.5rem;
-          border-radius: 4px;
-          font-family: monospace;
-        }
-
-        .payment-badge {
+          background: rgba(34, 211, 238, 0.1);
           padding: 0.25rem 0.75rem;
-          border-radius: 12px;
-          font-size: 0.8rem;
-          font-weight: 600;
-        }
-
-        .payment-badge.pending {
-          background: #fff3cd;
-          color: #856404;
-        }
-
-        .payment-badge.completed {
-          background: #d4edda;
-          color: #155724;
-        }
-
-        .special-requests {
-          padding: 1rem;
-          background: white;
           border-radius: 6px;
-          margin: 0;
-          color: #6b7280;
+          font-family: 'Orbitron', monospace;
+          color: #22D3EE;
+          border: 1px solid rgba(34, 211, 238, 0.3);
         }
 
         .amenities-list {
@@ -422,103 +368,85 @@ const BookingConfirmation = () => {
         }
 
         .amenity-tag {
-          background: white;
+          display: flex;
+          align-items: center;
+          gap: 0.35rem;
+          background: rgba(34, 211, 238, 0.1);
           padding: 0.5rem 1rem;
-          border-radius: 6px;
-          font-size: 0.875rem;
-          color: #667eea;
+          border-radius: 8px;
+          font-size: 0.85rem;
+          color: #22D3EE;
+          border: 1px solid rgba(34, 211, 238, 0.2);
         }
 
         .booking-actions {
           display: flex;
           gap: 1rem;
           margin-top: 2rem;
-          padding-top: 2rem;
-          border-top: 2px solid #e5e7eb;
+          padding-top: 1.5rem;
+          border-top: 1px solid rgba(34, 211, 238, 0.15);
         }
 
-        .btn {
+        .booking-actions .btn {
           flex: 1;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          gap: 0.5rem;
-          padding: 1rem;
-          border: none;
-          border-radius: 8px;
-          font-weight: 600;
-          cursor: pointer;
-          transition: all 0.3s;
-          text-decoration: none;
-        }
-
-        .btn-secondary {
-          background: #e5e7eb;
-          color: #1a1a2e;
-        }
-
-        .btn-secondary:hover {
-          background: #d1d5db;
-        }
-
-        .btn-danger {
-          background: #fee2e2;
-          color: #dc2626;
-        }
-
-        .btn-danger:hover {
-          background: #dc2626;
-          color: white;
         }
 
         .info-box {
-          background: white;
-          border-radius: 16px;
+          background: rgba(17, 24, 39, 0.85);
+          border-radius: 20px;
           padding: 2rem;
-          box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+          border: 1px solid rgba(168, 85, 247, 0.2);
         }
 
         .info-box h3 {
-          margin: 0 0 1rem 0;
-          color: #1a1a2e;
+          display: flex;
+          align-items: center;
+          gap: 0.5rem;
+          margin-bottom: 1rem;
+          color: #F8FAFC;
+        }
+
+        .info-box h3 svg {
+          color: #A855F7;
         }
 
         .info-box ul {
           margin: 0;
           padding-left: 1.5rem;
-          color: #6b7280;
+          color: #94A3B8;
         }
 
         .info-box li {
           margin-bottom: 0.5rem;
         }
 
+        .status-badge.pending {
+          background: rgba(251, 191, 36, 0.15);
+          color: #FBBF24;
+          border: 1px solid #FBBF24;
+        }
+
+        .status-badge.confirmed {
+          background: rgba(16, 185, 129, 0.15);
+          color: #10B981;
+          border: 1px solid #10B981;
+        }
+
+        .status-badge.cancelled {
+          background: rgba(239, 68, 68, 0.15);
+          color: #EF4444;
+          border: 1px solid #EF4444;
+        }
+
         @media (max-width: 768px) {
-          .booking-confirmation-page {
-            padding: 1rem;
-          }
-
-          .success-header h1 {
-            font-size: 1.5rem;
-          }
-
-          .booking-card {
-            padding: 1.5rem;
-          }
-
           .booking-header {
             flex-direction: column;
             align-items: flex-start;
             gap: 1rem;
           }
 
-          .info-row {
-            flex-direction: column;
-            gap: 0.25rem;
-          }
-
-          .value {
-            text-align: left;
+          .info-grid {
+            grid-template-columns: 1fr;
           }
 
           .booking-actions {
